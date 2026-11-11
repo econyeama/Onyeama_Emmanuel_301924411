@@ -1,0 +1,30 @@
+# CHANGES — what was fixed after testing (Emmanuel Onyeama, 2026/A/MIT/0876)
+
+The first version was drafted by an AI assistant (Z.ai). Claude then ran every
+script the way a GitHub Codespace runs them: Ubuntu 24.04, PostgreSQL 16 in
+`/etc/postgresql/16/main`, MongoDB 8, and a `codespace` user who may only use
+`sudo` as root. Below is every problem found when the scripts were run, and
+the fix. Final test: `setup.sh`, then P1 → P5 from a clean database, with no
+errors.
+
+| # | File | Problem found when run | Fix | Tested result |
+|---|---|---|---|---|
+| 1 | `setup.sh` | Stopped with `syntax error at or near "\"`: `\gexec` was used inside `psql -c "…"`, where it is not allowed — the `testpoint` database was never created | Moved into a heredoc | Database created |
+| 2 | `setup.sh`, P1 `run_p1.sh`, `generate_bulk.py` | Generator crashed: `Peer authentication failed for user "postgres"` — the Python script runs as the `codespace` Linux user, and peer auth only lets it log in as a role of the same name | `setup.sh` creates a database role for your Linux user; the generator connects as that user | Generator runs |
+| 3 | P1 `tests/constraint_tests.sql` | T1 was a syntax error (`INSERT … RETURNING` used as a value inside another INSERT); T3 and T4 reported **TEST FAILED** (they depended on seed rows / seat numbers that did not match); and it ran before the generator, which then TRUNCATEd everything the tests used | Rewritten: builds its own sessions, candidates and a valid booking 60 days ahead, runs inside `BEGIN … ROLLBACK` after the bulk load, 15 tests, stops the runner if any test fails | 15 of 15 rejected; bulk data untouched |
+| 4 | P1 schema | Nothing stopped a seat from **another centre**, a seat under maintenance, or someone else's registration being used in an allocation | New trigger `trg_z_check_allocation_consistency` (seat in the session's centre and active, registration = same candidate + same exam, `session_range` = the session's real time) | Tests T4–T6 |
+| 5 | P1 schema | Loading 50k+ allocations would take many minutes: the capacity trigger counts a session's allocations on every insert, and `seat_allocation.session_id` had no index (full scan per row) | Index `idx_allocation_session` | Bulk load ≈ 15 s |
+| 6 | P1 `generate_bulk.py` | Future sessions (next 90 days) were marked attended with exam results; past sessions stayed `scheduled`; every registration was dated today; 10% of seats were held with only a FAILED payment; times in UTC | Past sessions `completed`, upcoming ones only `allocated` and partly booked (free seats); registration 3–45 days before the exam; a failed card attempt is followed by a successful retry; Lagos time; result graded after the exam | 116k allocations, 227 upcoming sessions |
+| 7 | P1 `05_seed.sql` | Seed sessions were in the future but had scores | Seed sessions moved to the past (`completed`) | — |
+| 8 | P2 | No query that an index clearly helps; README promised all queries would get faster | Added Q9 (one candidate's history) + `idx_result_candidate_id`; `ANALYZE` before measuring; runner saves plans to `results/` and prints a BEFORE/AFTER/speed-up table; honest analysis in the README | Q9 ≈ 70× faster; reports about the same |
+| 9 | P3 `01_allocate_seat_function.sql` | Self-test booked seat A010 for candidate 6 — already taken after the bulk load (`seat … already allocated`); the function had no lock, so the guide's "Fix 2" was not actually in it | Self-test picks a free seat + free candidate and rolls back; `allocate_seat()` now locks the seat row with `SELECT … FOR UPDATE` | Self-test OK |
+| 10 | P3 `02_commit_rollback_demo.sql` | All three demos failed (`seat 20/21/22 already allocated`) | Rewritten with `\gset`: free seats, free candidates, BEGIN/COMMIT/ROLLBACK, counts before/after, demo rows removed at the end | ₦0 payment rolls back registration + allocation; seat resold |
+| 11 | P3 guides | Two-terminal steps used ids you had to work out by hand | `sql/race_setup.sql` + `sql/race_vars.sql` (`\i` loads the ids), guide rewritten as step tables Parts 1–6, new `run_race_demos.py` runs all six with two real sessions; `run_p3.sh` runs it → `race_demos_output.log` | 23505, "already allocated", 40001, RC vs RR, 40P01 |
+| 12 | P4 `02_schema_validation.js` | `Unknown $jsonSchema keyword: const` — the validator was never installed | `const` → one-value `enum` | 7 validator tests pass; 42k docs validated |
+| 13 | P4 `generate_questions.py` | `correct` was random, unrelated to `score` | `correct = score ≥ 0.5` | — |
+| 14 | P5 `01_partitioning.sql` | `no partition … found for row` — partitions covered only 12 months back, the data goes back 2 years | One partition per month covering all the data + DEFAULT; exact rows per partition; EXPLAIN ANALYZE pruning vs the unpartitioned table | 1 partition scanned (≈0.4 ms vs ≈6 ms) |
+| 15 | P5 `02_replica_setup.sh` | `pg_basebackup -C -S replica1` after the slot was already created → fails; Ubuntu keeps `pg_hba.conf`/`pg_ident.conf` in /etc so the replica had none | No `-C`; copies both files into the replica; replica gets its own `postgresql.conf` | Replica streaming, 0 bytes behind |
+| 16 | P5 `03_replica_tests.sql` | Every replica check used `\! sudo …` inside psql, which runs as `postgres` (cannot sudo) → all failed; the marker exam had duration 1 min, breaking the 30–480 CHECK | Switches servers with `\connect … 5432/5433`; duration 60 | Write refused on replica; marker row arrives |
+| 17 | P5 docs | Cited NDPA section numbers that do not match the Act; named cloud regions that do not exist in Nigeria | Principles named without section numbers; cross-border rules = Part VIII; Lagos/Abuja data centres | — |
+| 18 | `.gitignore` | Ignored all `*.log` — the evidence of your run would never reach GitHub | Logs are committed | — |
+| 19 | READMEs | ER diagram only as `.mmd` (GitHub does not draw it); AI declaration said scripts "will be executed" | Mermaid block in P1 README; honest AI declaration naming Z.ai and Claude; `collect_results.sh` writes `my_results.txt` | — |

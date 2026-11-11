@@ -1,0 +1,31 @@
+# TestPoint CBT — MIT 8103 portfolio .gitignore
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# (The run logs — p1_output.log … replication_output.log — ARE committed:
+#  they are the evidence of your own run.)
+
+# Rendered ER diagram (regenerate from er_diagram.mmd)
+er_diagram.png
+er_diagram.svg
+
+# Local PostgreSQL / MongoDB data dirs (Codespaces manages these)
+/replica_data/
+/data/db/
+
+# Documentation PDF (produced after running everything; committed separately)
+Onyeama_Emmanuel_2026-A-MIT-0876_Documentation.pdf
