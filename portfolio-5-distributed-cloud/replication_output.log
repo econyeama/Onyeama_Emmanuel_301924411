@@ -1,0 +1,133 @@
+===================================================================
+ Portfolio 5 — primary + streaming read replica
+   Primary : port 5432  (/var/lib/postgresql/16/main)
+   Replica : port 5433  (/var/lib/postgresql/16/replica)
+===================================================================
+[repl] configuring primary postgresql.conf for replication
+[repl] prepending replication trust lines to top of pg_hba.conf
+[repl] restarting primary to apply wal_level + pg_hba changes
+[repl] creating replication role 'repl' and slot 'replica1'
+DO
+ pg_create_physical_replication_slot 
+-------------------------------------
+ (replica1,)
+(1 row)
+
+[repl] running pg_basebackup (this can take ~30 s for the testpoint DB)
+waiting for checkpoint
+139030/139030 kB (100%), 0/1 tablespace
+139030/139030 kB (100%), 1/1 tablespace
+[repl] writing the replica's own postgresql.conf overrides
+[repl] starting replica on port 5433
+waiting for server to start.... done
+server started
+
+=== Verification ===
+[repl] primary (5432) — SELECT pg_is_in_recovery();
+ primary_is_in_recovery 
+------------------------
+ f
+(1 row)
+
+
+[repl] replica (5433) — SELECT pg_is_in_recovery();
+ replica_is_in_recovery 
+------------------------
+ t
+(1 row)
+
+
+[repl] primary — replication status:
+ application_name |   state   | sync_state |  sent_lsn  | write_lsn  | flush_lsn  | replay_lsn 
+------------------+-----------+------------+------------+------------+------------+------------
+ walreceiver      | streaming | async      | 0/10000000 | 0/10000000 | 0/10000000 | 0/10000000
+(1 row)
+
+
+[repl] DONE.
+[repl] Replication is now streaming: writes on the primary (port 5432)
+[repl] are replayed onto the replica (port 5433) within milliseconds.
+
+[repl] To connect to the replica for read-only queries:
+    sudo runuser -u postgres -- psql -p 5433 -d testpoint
+
+=== Portfolio 5 — replica tests ===
+
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5433".
+ server  | port | in_recovery 
+---------+------+-------------
+ REPLICA | 5433 | t
+(1 row)
+
+--- T1. Attempt an INSERT on the REPLICA (port 5433). Must be rejected ---
+    (expected: ERROR: cannot execute INSERT in a read-only transaction)
+
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-5-distributed-cloud/sql/03_replica_tests.sql:38: ERROR:  cannot execute INSERT in a read-only transaction
+
+    Confirm the row did NOT land on the replica:
+You are now connected to database "testpoint" as user "postgres".
+ replica_rows_with_test_code 
+-----------------------------
+                           0
+(1 row)
+
+
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
+ server  | port | in_recovery 
+---------+------+-------------
+ PRIMARY | 5432 | f
+(1 row)
+
+--- T2. Insert a marker row on the PRIMARY (port 5432), then read it on the REPLICA ---
+
+INSERT 0 1
+    Primary: marker row inserted. Waiting 1 s for streaming replay …
+ pg_sleep 
+----------
+ 
+(1 row)
+
+    Replica: read the marker row back (should now exist):
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5433".
+       code       |       title       | default_fee 
+------------------+-------------------+-------------
+ P5-REPLICA-PROOF | Replica proof row |      100.00
+(1 row)
+
+
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
+--- T3. Replication lag on the primary ---
+ application_name |   state   | sync_state | primary_sent | replica_replayed | lag_bytes 
+------------------+-----------+------------+--------------+------------------+-----------
+ walreceiver      | streaming | async      | 0/100043D0   | 0/100043D0       |         0
+(1 row)
+
+
+--- T3b. Replica-side view: how far behind is recovery? ---
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5433".
+ replay_lag_interval | last_replayed_lsn 
+---------------------+-------------------
+ 00:00:01.027414     | 0/100043D0
+(1 row)
+
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
+DELETE 1
+ pg_sleep 
+----------
+ 
+(1 row)
+
+
+    Replica after cleanup (marker rows gone via streaming):
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5433".
+ replica_marker_rows_left 
+--------------------------
+                        0
+(1 row)
+
+
+=== Replica tests done ===
+Screenshot:
+  T1 — the replica INSERT error (read-only transaction).
+  T2 — the marker row appearing on the replica after ~1 s.
+  T3 — the lag in bytes / seconds from pg_stat_replication.

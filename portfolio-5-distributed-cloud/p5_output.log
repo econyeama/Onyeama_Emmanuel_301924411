@@ -1,0 +1,317 @@
+===================================================================
+ Portfolio 5 — Distributed and Cloud Database Exercise
+===================================================================
+
+[p5] step 1 — partitioning seat_allocation by month
+
+=== Portfolio 5 — partitioning seat_allocation by month ===
+
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-5-distributed-cloud/sql/01_partitioning.sql:36: NOTICE:  table "seat_allocation_part" does not exist, skipping
+DROP TABLE
+CREATE TABLE
+DO
+ partitions 
+------------
+         30
+(1 row)
+
+Partitions created. List:
+          partition           
+------------------------------
+ seat_allocation_part_2024_09
+ seat_allocation_part_2024_10
+ seat_allocation_part_2024_11
+ seat_allocation_part_2024_12
+ seat_allocation_part_2025_01
+ seat_allocation_part_2025_02
+ seat_allocation_part_2025_03
+ seat_allocation_part_2025_04
+ seat_allocation_part_2025_05
+ seat_allocation_part_2025_06
+ seat_allocation_part_2025_07
+ seat_allocation_part_2025_08
+ seat_allocation_part_2025_09
+ seat_allocation_part_2025_10
+ seat_allocation_part_2025_11
+ seat_allocation_part_2025_12
+ seat_allocation_part_2026_01
+ seat_allocation_part_2026_02
+ seat_allocation_part_2026_03
+ seat_allocation_part_2026_04
+ seat_allocation_part_2026_05
+ seat_allocation_part_2026_06
+ seat_allocation_part_2026_07
+ seat_allocation_part_2026_08
+ seat_allocation_part_2026_09
+ seat_allocation_part_2026_10
+ seat_allocation_part_2026_11
+ seat_allocation_part_2026_12
+ seat_allocation_part_2027_01
+ seat_allocation_part_default
+(30 rows)
+
+
+Migrating rows from seat_allocation -> seat_allocation_part …
+INSERT 0 116823
+ANALYZE
+Rows per partition (exact; screenshot this for evidence):
+  month  | rows 
+---------+------
+ 2024_09 |   36
+ 2024_10 | 2401
+ 2024_11 | 4752
+ 2024_12 | 5397
+ 2025_01 | 4571
+ 2025_02 | 3985
+ 2025_03 | 4582
+ 2025_04 | 4364
+ 2025_05 | 4581
+ 2025_06 | 4790
+ 2025_07 | 4264
+ 2025_08 | 4577
+ 2025_09 | 4193
+ 2025_10 | 4620
+ 2025_11 | 4631
+ 2025_12 | 4531
+ 2026_01 | 4863
+ 2026_02 | 4326
+ 2026_03 | 4623
+ 2026_04 | 4605
+ 2026_05 | 4623
+ 2026_06 | 4518
+ 2026_07 | 4926
+ 2026_08 | 4738
+ 2026_09 | 4555
+ 2026_10 | 4283
+ 2026_11 | 4488
+(27 rows)
+
+ rows_in_original | rows_in_partitioned 
+------------------+---------------------
+           116823 |              116823
+(1 row)
+
+
+=== Partition pruning demo ===
+
+--- WITHOUT date filter: ALL partitions scanned ---
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
+ Aggregate (actual rows=1 loops=1)
+   ->  Append (actual rows=116823 loops=1)
+         ->  Seq Scan on seat_allocation_part_2024_09 seat_allocation_part_1 (actual rows=36 loops=1)
+         ->  Seq Scan on seat_allocation_part_2024_10 seat_allocation_part_2 (actual rows=2401 loops=1)
+         ->  Seq Scan on seat_allocation_part_2024_11 seat_allocation_part_3 (actual rows=4752 loops=1)
+         ->  Seq Scan on seat_allocation_part_2024_12 seat_allocation_part_4 (actual rows=5397 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_01 seat_allocation_part_5 (actual rows=4571 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_02 seat_allocation_part_6 (actual rows=3985 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_03 seat_allocation_part_7 (actual rows=4582 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_04 seat_allocation_part_8 (actual rows=4364 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_05 seat_allocation_part_9 (actual rows=4581 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_06 seat_allocation_part_10 (actual rows=4790 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_07 seat_allocation_part_11 (actual rows=4264 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_08 seat_allocation_part_12 (actual rows=4577 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_09 seat_allocation_part_13 (actual rows=4193 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_10 seat_allocation_part_14 (actual rows=4620 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_11 seat_allocation_part_15 (actual rows=4631 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_12 seat_allocation_part_16 (actual rows=4531 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_01 seat_allocation_part_17 (actual rows=4863 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_02 seat_allocation_part_18 (actual rows=4326 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_03 seat_allocation_part_19 (actual rows=4623 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_04 seat_allocation_part_20 (actual rows=4605 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_05 seat_allocation_part_21 (actual rows=4623 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_06 seat_allocation_part_22 (actual rows=4518 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_07 seat_allocation_part_23 (actual rows=4926 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_08 seat_allocation_part_24 (actual rows=4738 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_09 seat_allocation_part_25 (actual rows=4555 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_10 seat_allocation_part_26 (actual rows=4283 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_11 seat_allocation_part_27 (actual rows=4488 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_12 seat_allocation_part_28 (actual rows=0 loops=1)
+         ->  Seq Scan on seat_allocation_part_2027_01 seat_allocation_part_29 (actual rows=0 loops=1)
+         ->  Seq Scan on seat_allocation_part_default seat_allocation_part_30 (actual rows=0 loops=1)
+ Planning Time: 0.250 ms
+ Execution Time: 8.497 ms
+(34 rows)
+
+
+--- WITH a one-month filter ( 2025-11-01 ): only ONE partition scanned ---
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate (actual rows=1 loops=1)
+   ->  Seq Scan on seat_allocation_part_2025_11 seat_allocation_part (actual rows=4631 loops=1)
+         Filter: ((allocated_at >= '2025-11-01 00:00:00+01'::timestamp with time zone) AND (allocated_at < '2025-12-01 00:00:00+01'::timestamp with time zone))
+ Planning Time: 0.133 ms
+ Execution Time: 0.483 ms
+(5 rows)
+
+
+--- same one-month question on the UNPARTITIONED table ---
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate (actual rows=1 loops=1)
+   ->  Seq Scan on seat_allocation (actual rows=4631 loops=1)
+         Filter: ((allocated_at >= '2025-11-01 00:00:00+01'::timestamp with time zone) AND (allocated_at < '2025-12-01 00:00:00+01'::timestamp with time zone))
+         Rows Removed by Filter: 112192
+ Planning Time: 0.060 ms
+ Execution Time: 8.785 ms
+(6 rows)
+
+
+[p5] step 2 — set up primary + streaming replica (interactive-ish;
+    restarts the primary cluster to apply wal_level/pg_hba changes)
+===================================================================
+ Portfolio 5 — primary + streaming read replica
+   Primary : port 5432  (/var/lib/postgresql/16/main)
+   Replica : port 5433  (/var/lib/postgresql/16/replica)
+===================================================================
+[repl] configuring primary postgresql.conf for replication
+[repl] prepending replication trust lines to top of pg_hba.conf
+[repl] restarting primary to apply wal_level + pg_hba changes
+[repl] creating replication role 'repl' and slot 'replica1'
+DO
+ pg_create_physical_replication_slot 
+-------------------------------------
+ (replica1,)
+(1 row)
+
+[repl] running pg_basebackup (this can take ~30 s for the testpoint DB)
+waiting for checkpoint
+139030/139030 kB (100%), 0/1 tablespace
+139030/139030 kB (100%), 1/1 tablespace
+[repl] writing the replica's own postgresql.conf overrides
+[repl] starting replica on port 5433
+waiting for server to start.... done
+server started
+
+=== Verification ===
+[repl] primary (5432) — SELECT pg_is_in_recovery();
+ primary_is_in_recovery 
+------------------------
+ f
+(1 row)
+
+
+[repl] replica (5433) — SELECT pg_is_in_recovery();
+ replica_is_in_recovery 
+------------------------
+ t
+(1 row)
+
+
+[repl] primary — replication status:
+ application_name |   state   | sync_state |  sent_lsn  | write_lsn  | flush_lsn  | replay_lsn 
+------------------+-----------+------------+------------+------------+------------+------------
+ walreceiver      | streaming | async      | 0/10000000 | 0/10000000 | 0/10000000 | 0/10000000
+(1 row)
+
+
+[repl] DONE.
+[repl] Replication is now streaming: writes on the primary (port 5432)
+[repl] are replayed onto the replica (port 5433) within milliseconds.
+
+[repl] To connect to the replica for read-only queries:
+    sudo runuser -u postgres -- psql -p 5433 -d testpoint
+
+[p5] step 3 — replica tests: replica rejects writes + new rows arrive
+
+=== Portfolio 5 — replica tests ===
+
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5433".
+ server  | port | in_recovery 
+---------+------+-------------
+ REPLICA | 5433 | t
+(1 row)
+
+--- T1. Attempt an INSERT on the REPLICA (port 5433). Must be rejected ---
+    (expected: ERROR: cannot execute INSERT in a read-only transaction)
+
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-5-distributed-cloud/sql/03_replica_tests.sql:38: ERROR:  cannot execute INSERT in a read-only transaction
+
+    Confirm the row did NOT land on the replica:
+You are now connected to database "testpoint" as user "postgres".
+ replica_rows_with_test_code 
+-----------------------------
+                           0
+(1 row)
+
+
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
+ server  | port | in_recovery 
+---------+------+-------------
+ PRIMARY | 5432 | f
+(1 row)
+
+--- T2. Insert a marker row on the PRIMARY (port 5432), then read it on the REPLICA ---
+
+INSERT 0 1
+    Primary: marker row inserted. Waiting 1 s for streaming replay …
+ pg_sleep 
+----------
+ 
+(1 row)
+
+    Replica: read the marker row back (should now exist):
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5433".
+       code       |       title       | default_fee 
+------------------+-------------------+-------------
+ P5-REPLICA-PROOF | Replica proof row |      100.00
+(1 row)
+
+
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
+--- T3. Replication lag on the primary ---
+ application_name |   state   | sync_state | primary_sent | replica_replayed | lag_bytes 
+------------------+-----------+------------+--------------+------------------+-----------
+ walreceiver      | streaming | async      | 0/100043D0   | 0/100043D0       |         0
+(1 row)
+
+
+--- T3b. Replica-side view: how far behind is recovery? ---
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5433".
+ replay_lag_interval | last_replayed_lsn 
+---------------------+-------------------
+ 00:00:01.027414     | 0/100043D0
+(1 row)
+
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
+DELETE 1
+ pg_sleep 
+----------
+ 
+(1 row)
+
+
+    Replica after cleanup (marker rows gone via streaming):
+You are now connected to database "testpoint" as user "postgres" via socket in "/var/run/postgresql" at port "5433".
+ replica_marker_rows_left 
+--------------------------
+                        0
+(1 row)
+
+
+=== Replica tests done ===
+Screenshot:
+  T1 — the replica INSERT error (read-only transaction).
+  T2 — the marker row appearing on the replica after ~1 s.
+  T3 — the lag in bytes / seconds from pg_stat_replication.
+
+[p5] DONE.
+[p5] What to screenshot:
+[p5]   1. The monthly partitions + rows per month (partition_output.log).
+[p5]   2. The partition-pruning EXPLAIN output (1 partition scanned
+[p5]      vs every partition scanned without the date filter).
+[p5]   3. The replica setup verification:
+[p5]        SELECT pg_is_in_recovery();  on port 5432 (false) and
+[p5]                                     on port 5433 (true).
+[p5]        SELECT * FROM pg_stat_replication;  on the primary.
+[p5]   4. T1 — the replica INSERT error (read-only transaction).
+[p5]   5. T2 — the marker row appearing on the replica after ~1 s.
+[p5]   6. T3 — pg_stat_replication lag in bytes + replay_lag interval.
+[p5]   7. Render docs/cloud_architecture.md and docs/cap_tradeoffs.md
+[p5]      to PDF (or include the markdown) as the discussion evidence.
+
+[p5] Git commit (from repo root):
+    git add portfolio-5-distributed-cloud/ && \
+    git commit -m 'feat(p5): monthly partitioning, primary+streaming replica, NDPA-2023 cloud arch, CAP' && \
+    git tag p5-distributed
+===================================================================

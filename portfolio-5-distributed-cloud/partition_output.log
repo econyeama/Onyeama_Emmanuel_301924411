@@ -1,0 +1,153 @@
+
+=== Portfolio 5 — partitioning seat_allocation by month ===
+
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-5-distributed-cloud/sql/01_partitioning.sql:36: NOTICE:  table "seat_allocation_part" does not exist, skipping
+DROP TABLE
+CREATE TABLE
+DO
+ partitions 
+------------
+         30
+(1 row)
+
+Partitions created. List:
+          partition           
+------------------------------
+ seat_allocation_part_2024_09
+ seat_allocation_part_2024_10
+ seat_allocation_part_2024_11
+ seat_allocation_part_2024_12
+ seat_allocation_part_2025_01
+ seat_allocation_part_2025_02
+ seat_allocation_part_2025_03
+ seat_allocation_part_2025_04
+ seat_allocation_part_2025_05
+ seat_allocation_part_2025_06
+ seat_allocation_part_2025_07
+ seat_allocation_part_2025_08
+ seat_allocation_part_2025_09
+ seat_allocation_part_2025_10
+ seat_allocation_part_2025_11
+ seat_allocation_part_2025_12
+ seat_allocation_part_2026_01
+ seat_allocation_part_2026_02
+ seat_allocation_part_2026_03
+ seat_allocation_part_2026_04
+ seat_allocation_part_2026_05
+ seat_allocation_part_2026_06
+ seat_allocation_part_2026_07
+ seat_allocation_part_2026_08
+ seat_allocation_part_2026_09
+ seat_allocation_part_2026_10
+ seat_allocation_part_2026_11
+ seat_allocation_part_2026_12
+ seat_allocation_part_2027_01
+ seat_allocation_part_default
+(30 rows)
+
+
+Migrating rows from seat_allocation -> seat_allocation_part …
+INSERT 0 116823
+ANALYZE
+Rows per partition (exact; screenshot this for evidence):
+  month  | rows 
+---------+------
+ 2024_09 |   36
+ 2024_10 | 2401
+ 2024_11 | 4752
+ 2024_12 | 5397
+ 2025_01 | 4571
+ 2025_02 | 3985
+ 2025_03 | 4582
+ 2025_04 | 4364
+ 2025_05 | 4581
+ 2025_06 | 4790
+ 2025_07 | 4264
+ 2025_08 | 4577
+ 2025_09 | 4193
+ 2025_10 | 4620
+ 2025_11 | 4631
+ 2025_12 | 4531
+ 2026_01 | 4863
+ 2026_02 | 4326
+ 2026_03 | 4623
+ 2026_04 | 4605
+ 2026_05 | 4623
+ 2026_06 | 4518
+ 2026_07 | 4926
+ 2026_08 | 4738
+ 2026_09 | 4555
+ 2026_10 | 4283
+ 2026_11 | 4488
+(27 rows)
+
+ rows_in_original | rows_in_partitioned 
+------------------+---------------------
+           116823 |              116823
+(1 row)
+
+
+=== Partition pruning demo ===
+
+--- WITHOUT date filter: ALL partitions scanned ---
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
+ Aggregate (actual rows=1 loops=1)
+   ->  Append (actual rows=116823 loops=1)
+         ->  Seq Scan on seat_allocation_part_2024_09 seat_allocation_part_1 (actual rows=36 loops=1)
+         ->  Seq Scan on seat_allocation_part_2024_10 seat_allocation_part_2 (actual rows=2401 loops=1)
+         ->  Seq Scan on seat_allocation_part_2024_11 seat_allocation_part_3 (actual rows=4752 loops=1)
+         ->  Seq Scan on seat_allocation_part_2024_12 seat_allocation_part_4 (actual rows=5397 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_01 seat_allocation_part_5 (actual rows=4571 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_02 seat_allocation_part_6 (actual rows=3985 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_03 seat_allocation_part_7 (actual rows=4582 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_04 seat_allocation_part_8 (actual rows=4364 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_05 seat_allocation_part_9 (actual rows=4581 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_06 seat_allocation_part_10 (actual rows=4790 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_07 seat_allocation_part_11 (actual rows=4264 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_08 seat_allocation_part_12 (actual rows=4577 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_09 seat_allocation_part_13 (actual rows=4193 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_10 seat_allocation_part_14 (actual rows=4620 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_11 seat_allocation_part_15 (actual rows=4631 loops=1)
+         ->  Seq Scan on seat_allocation_part_2025_12 seat_allocation_part_16 (actual rows=4531 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_01 seat_allocation_part_17 (actual rows=4863 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_02 seat_allocation_part_18 (actual rows=4326 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_03 seat_allocation_part_19 (actual rows=4623 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_04 seat_allocation_part_20 (actual rows=4605 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_05 seat_allocation_part_21 (actual rows=4623 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_06 seat_allocation_part_22 (actual rows=4518 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_07 seat_allocation_part_23 (actual rows=4926 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_08 seat_allocation_part_24 (actual rows=4738 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_09 seat_allocation_part_25 (actual rows=4555 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_10 seat_allocation_part_26 (actual rows=4283 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_11 seat_allocation_part_27 (actual rows=4488 loops=1)
+         ->  Seq Scan on seat_allocation_part_2026_12 seat_allocation_part_28 (actual rows=0 loops=1)
+         ->  Seq Scan on seat_allocation_part_2027_01 seat_allocation_part_29 (actual rows=0 loops=1)
+         ->  Seq Scan on seat_allocation_part_default seat_allocation_part_30 (actual rows=0 loops=1)
+ Planning Time: 0.250 ms
+ Execution Time: 8.497 ms
+(34 rows)
+
+
+--- WITH a one-month filter ( 2025-11-01 ): only ONE partition scanned ---
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate (actual rows=1 loops=1)
+   ->  Seq Scan on seat_allocation_part_2025_11 seat_allocation_part (actual rows=4631 loops=1)
+         Filter: ((allocated_at >= '2025-11-01 00:00:00+01'::timestamp with time zone) AND (allocated_at < '2025-12-01 00:00:00+01'::timestamp with time zone))
+ Planning Time: 0.133 ms
+ Execution Time: 0.483 ms
+(5 rows)
+
+
+--- same one-month question on the UNPARTITIONED table ---
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate (actual rows=1 loops=1)
+   ->  Seq Scan on seat_allocation (actual rows=4631 loops=1)
+         Filter: ((allocated_at >= '2025-11-01 00:00:00+01'::timestamp with time zone) AND (allocated_at < '2025-12-01 00:00:00+01'::timestamp with time zone))
+         Rows Removed by Filter: 112192
+ Planning Time: 0.060 ms
+ Execution Time: 8.785 ms
+(6 rows)
+
