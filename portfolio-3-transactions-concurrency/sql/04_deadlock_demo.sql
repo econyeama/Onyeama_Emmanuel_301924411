@@ -1,0 +1,11 @@
+-- =============================================================================
+-- Portfolio 3 — sql/04_deadlock_demo.sql — reference list (two sessions).
+--   A: BEGIN; SELECT seat_id FROM seat WHERE seat_id = :seat  FOR UPDATE;
+--   B: BEGIN; SELECT seat_id FROM seat WHERE seat_id = :seat2 FOR UPDATE;
+--   A: SELECT seat_id FROM seat WHERE seat_id = :seat2 FOR UPDATE;   -- waits
+--   B: SELECT seat_id FROM seat WHERE seat_id = :seat  FOR UPDATE;   -- ERROR 40P01 deadlock detected
+-- Fix: always lock in one order:
+--   SELECT seat_id FROM seat WHERE seat_id IN (:seat, :seat2) ORDER BY seat_id FOR UPDATE;
+-- Automatic: python3 run_race_demos.py (Part 6). By hand: guide Part 6.
+-- =============================================================================
+\echo 'Reference only — see guides/race_condition_two_terminal.md Part 6.'
