@@ -1,0 +1,500 @@
+
+----- AFTER: 01_free_seats.sql -----
+
+=== Q1. Free seats at a centre for a session ===
+
+--- example session picked ---
+ session_id | centre | city  | exam | session_date |       start_time       
+------------+--------+-------+------+--------------+------------------------
+       1892 | LOS-01 | Lagos | PMP  | 2026-11-24   | 2026-11-24 13:00:00+01
+(1 row)
+
+
+--- query result: free seats for that session ---
+ seat_id | seat_number | computer_name | status 
+---------+-------------+---------------+--------
+       2 | A002        | los01-pc-002  | active
+       4 | A004        | los01-pc-004  | active
+       8 | A008        | los01-pc-008  | active
+      10 | A010        | los01-pc-010  | active
+      11 | A011        | los01-pc-011  | active
+      15 | A015        | los01-pc-015  | active
+      16 | A016        | los01-pc-016  | active
+      19 | A019        | los01-pc-019  | active
+      20 | A020        | los01-pc-020  | active
+      21 | A021        | los01-pc-021  | active
+      22 | A022        | los01-pc-022  | active
+      23 | A023        | los01-pc-023  | active
+      25 | A025        | los01-pc-025  | active
+      26 | A026        | los01-pc-026  | active
+      27 | A027        | los01-pc-027  | active
+      29 | A029        | los01-pc-029  | active
+      30 | A030        | los01-pc-030  | active
+      31 | A031        | los01-pc-031  | active
+      35 | A035        | los01-pc-035  | active
+      36 | A036        | los01-pc-036  | active
+(20 rows)
+
+
+--- EXPLAIN ANALYZE (paste real output into results/before_after_table.md) ---
+                                                                                QUERY PLAN                                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Hash Right Anti Join  (cost=30.76..40.06 rows=75 width=26) (actual time=0.130..0.139 rows=59 loops=1)
+   Hash Cond: (sa.seat_id = s.seat_id)
+   InitPlan 1 (returns $0)
+     ->  Limit  (cost=4.51..7.92 rows=1 width=20) (actual time=0.044..0.045 rows=1 loops=1)
+           ->  Incremental Sort  (cost=4.51..21.59 rows=5 width=20) (actual time=0.043..0.044 rows=1 loops=1)
+                 Sort Key: s2.session_date, s2.start_time
+                 Presorted Key: s2.session_date
+                 Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 25kB  Peak Memory: 25kB
+                 ->  Nested Loop  (cost=0.28..21.36 rows=5 width=20) (actual time=0.029..0.040 rows=3 loops=1)
+                       Join Filter: (s2.centre_id = c.centre_id)
+                       Rows Removed by Join Filter: 7
+                       ->  Nested Loop  (cost=0.28..19.91 rows=26 width=28) (actual time=0.020..0.033 rows=10 loops=1)
+                             Join Filter: (s2.exam_id = e.exam_id)
+                             Rows Removed by Join Filter: 50
+                             ->  Index Scan using idx_es_session_date on exam_session s2  (cost=0.28..15.33 rows=231 width=36) (actual time=0.008..0.014 rows=60 loops=1)
+                                   Index Cond: (session_date >= CURRENT_DATE)
+                             ->  Materialize  (cost=0.00..1.12 rows=1 width=8) (actual time=0.000..0.000 rows=1 loops=60)
+                                   ->  Seq Scan on exam e  (cost=0.00..1.11 rows=1 width=8) (actual time=0.002..0.003 rows=1 loops=1)
+                                         Filter: (code = 'PMP'::text)
+                                         Rows Removed by Filter: 8
+                       ->  Materialize  (cost=0.00..1.07 rows=1 width=8) (actual time=0.000..0.001 rows=1 loops=10)
+                             ->  Seq Scan on centre c  (cost=0.00..1.06 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+                                   Filter: (code = 'LOS-01'::text)
+                                   Rows Removed by Filter: 4
+   ->  Index Scan using idx_sa_session_id on seat_allocation sa  (cost=0.29..9.27 rows=56 width=16) (actual time=0.006..0.010 rows=54 loops=1)
+         Index Cond: (session_id = $0)
+   ->  Hash  (cost=21.47..21.47 rows=86 width=34) (actual time=0.110..0.111 rows=113 loops=1)
+         Buckets: 1024  Batches: 1  Memory Usage: 16kB
+         ->  Nested Loop  (cost=5.25..21.47 rows=86 width=34) (actual time=0.072..0.093 rows=113 loops=1)
+               ->  Index Scan using exam_session_pkey on exam_session es  (cost=0.28..8.30 rows=1 width=16) (actual time=0.054..0.055 rows=1 loops=1)
+                     Index Cond: (session_id = $0)
+               ->  Bitmap Heap Scan on seat s  (cost=4.97..12.32 rows=85 width=34) (actual time=0.016..0.028 rows=113 loops=1)
+                     Recheck Cond: (centre_id = es.centre_id)
+                     Filter: (status = 'active'::text)
+                     Rows Removed by Filter: 7
+                     Heap Blocks: exact=2
+                     ->  Bitmap Index Scan on seat_centre_id_seat_number_key  (cost=0.00..4.95 rows=90 width=0) (actual time=0.010..0.011 rows=120 loops=1)
+                           Index Cond: (centre_id = es.centre_id)
+ Planning Time: 0.377 ms
+ Execution Time: 0.175 ms
+(40 rows)
+
+
+----- AFTER: 02_candidates_per_exam_month.sql -----
+
+=== Q2. Candidates per exam per month ===
+
+  code   |            title             |  month  | candidates 
+---------+------------------------------+---------+------------
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2024-11 |        222
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2024-12 |        475
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-01 |        486
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-02 |        444
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-03 |        245
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-04 |        758
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-05 |        505
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-06 |        580
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-07 |        742
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-08 |        511
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-09 |        341
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-10 |        289
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-11 |        470
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2025-12 |        826
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-01 |        315
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-02 |        353
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-03 |        572
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-04 |        546
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-05 |        541
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-06 |        418
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-07 |        426
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-08 |        856
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-09 |        538
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-10 |        258
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-11 |        537
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2026-12 |        275
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2027-01 |         81
+ ACCA-F6 | ACCA Taxation (TX-F6)        | 2027-02 |          9
+ AZ-900  | Microsoft Azure Fundamentals | 2024-11 |        577
+ AZ-900  | Microsoft Azure Fundamentals | 2024-12 |        414
+ AZ-900  | Microsoft Azure Fundamentals | 2025-01 |        457
+ AZ-900  | Microsoft Azure Fundamentals | 2025-02 |        249
+ AZ-900  | Microsoft Azure Fundamentals | 2025-03 |        443
+ AZ-900  | Microsoft Azure Fundamentals | 2025-04 |        622
+ AZ-900  | Microsoft Azure Fundamentals | 2025-05 |        284
+ AZ-900  | Microsoft Azure Fundamentals | 2025-06 |        297
+ AZ-900  | Microsoft Azure Fundamentals | 2025-07 |        622
+ AZ-900  | Microsoft Azure Fundamentals | 2025-08 |        294
+ AZ-900  | Microsoft Azure Fundamentals | 2025-09 |        555
+ AZ-900  | Microsoft Azure Fundamentals | 2025-10 |        552
+(40 rows)
+
+
+--- EXPLAIN ANALYZE ---
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort  (cost=16924.33..18105.02 rows=2106 width=54) (actual time=182.461..201.453 rows=252 loops=1)
+   Sort Key: e.code, (to_char((date_trunc('month'::text, (es.session_date)::timestamp with time zone)), 'YYYY-MM'::text))
+   Presorted Key: e.code
+   Full-sort Groups: 5  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+   ->  GroupAggregate  (cost=16780.06..17995.64 rows=2106 width=54) (actual time=176.802..201.370 rows=252 loops=1)
+         Group Key: e.code, (date_trunc('month'::text, (es.session_date)::timestamp with time zone))
+         ->  Sort  (cost=16780.06..17072.11 rows=116820 width=26) (actual time=176.737..190.516 rows=116820 loops=1)
+               Sort Key: e.code, (date_trunc('month'::text, (es.session_date)::timestamp with time zone)), sa.candidate_id
+               Sort Method: external merge  Disk: 5024kB
+               ->  Hash Join  (cost=81.23..4150.86 rows=116820 width=26) (actual time=0.390..58.668 rows=116820 loops=1)
+                     Hash Cond: (es.exam_id = e.exam_id)
+                     ->  Hash Join  (cost=80.03..3114.50 rows=116820 width=20) (actual time=0.374..27.810 rows=116820 loops=1)
+                           Hash Cond: (sa.session_id = es.session_id)
+                           ->  Seq Scan on seat_allocation sa  (cost=0.00..2727.20 rows=116820 width=16) (actual time=0.002..9.019 rows=116820 loops=1)
+                           ->  Hash  (cost=53.90..53.90 rows=2090 width=20) (actual time=0.365..0.366 rows=2090 loops=1)
+                                 Buckets: 4096  Batches: 1  Memory Usage: 147kB
+                                 ->  Seq Scan on exam_session es  (cost=0.00..53.90 rows=2090 width=20) (actual time=0.003..0.173 rows=2090 loops=1)
+                     ->  Hash  (cost=1.09..1.09 rows=9 width=14) (actual time=0.009..0.009 rows=9 loops=1)
+                           Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                           ->  Seq Scan on exam e  (cost=0.00..1.09 rows=9 width=14) (actual time=0.004..0.005 rows=9 loops=1)
+ Planning Time: 0.277 ms
+ Execution Time: 202.763 ms
+(22 rows)
+
+
+----- AFTER: 03_centre_utilisation.sql -----
+
+=== Q3. Centre utilisation % ===
+
+  code  |  city  | sessions_held | seat_session_capacity | allocations | utilisation_pct 
+--------+--------+---------------+-----------------------+-------------+-----------------
+ LOS-01 | Lagos  |           431 |                 51720 |       32804 |           63.43
+ KAN-01 | Kano   |           415 |                 37350 |       22926 |           61.38
+ ENU-01 | Enugu  |           406 |                 24360 |       14941 |           61.33
+ ABJ-01 | Abuja  |           432 |                 43200 |       26447 |           61.22
+ IBD-01 | Ibadan |           406 |                 32480 |       19702 |           60.66
+(5 rows)
+
+
+--- EXPLAIN ANALYZE ---
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=17771.85..17771.86 rows=5 width=59) (actual time=161.599..161.604 rows=5 loops=1)
+   Sort Key: (round(((100.0 * (count(sa.allocation_id))::numeric) / (NULLIF((c.seat_capacity * count(DISTINCT es.session_id)), 0))::numeric), 2)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   ->  GroupAggregate  (cost=16311.39..17771.79 rows=5 width=59) (actual time=138.841..161.589 rows=5 loops=1)
+         Group Key: c.code, c.seat_capacity
+         ->  Sort  (cost=16311.39..16603.44 rows=116820 width=27) (actual time=129.873..149.876 rows=116820 loops=1)
+               Sort Key: c.code, c.seat_capacity, es.session_id
+               Sort Method: external merge  Disk: 4816kB
+               ->  Hash Join  (cost=81.14..3682.19 rows=116820 width=27) (actual time=0.451..42.189 rows=116820 loops=1)
+                     Hash Cond: (es.centre_id = c.centre_id)
+                     ->  Hash Right Join  (cost=80.03..3114.50 rows=116820 width=24) (actual time=0.437..27.022 rows=116820 loops=1)
+                           Hash Cond: (sa.session_id = es.session_id)
+                           ->  Seq Scan on seat_allocation sa  (cost=0.00..2727.20 rows=116820 width=16) (actual time=0.003..8.997 rows=116820 loops=1)
+                           ->  Hash  (cost=53.90..53.90 rows=2090 width=16) (actual time=0.428..0.430 rows=2090 loops=1)
+                                 Buckets: 4096  Batches: 1  Memory Usage: 130kB
+                                 ->  Seq Scan on exam_session es  (cost=0.00..53.90 rows=2090 width=16) (actual time=0.003..0.229 rows=2090 loops=1)
+                     ->  Hash  (cost=1.05..1.05 rows=5 width=19) (actual time=0.010..0.011 rows=5 loops=1)
+                           Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                           ->  Seq Scan on centre c  (cost=0.00..1.05 rows=5 width=19) (actual time=0.005..0.006 rows=5 loops=1)
+ Planning Time: 0.330 ms
+ Execution Time: 162.527 ms
+(21 rows)
+
+
+----- AFTER: 04_pass_rate.sql -----
+
+=== Q4. Pass rate per exam (pass mark = 50) ===
+
+   code   |               title               | results_recorded | passes | fails | pass_rate_pct | avg_score 
+----------+-----------------------------------+------------------+--------+-------+---------------+-----------
+ PMP      | Project Management Professional   |            10264 |   9019 |  1245 |         87.87 |     64.96
+ NNPC-REC | NNPC Graduate Recruitment Test    |            10881 |   9551 |  1330 |         87.78 |     64.88
+ ACCA-F6  | ACCA Taxation (TX-F6)             |            10414 |   9138 |  1276 |         87.75 |     64.97
+ TOEFL    | TOEFL iBT                         |            10482 |   9188 |  1294 |         87.66 |     65.01
+ AZ-900   | Microsoft Azure Fundamentals      |            11560 |  10131 |  1429 |         87.64 |     64.90
+ CBN-REC  | CBN Recruitment Aptitude Test     |             8826 |   7728 |  1098 |         87.56 |     64.94
+ CCNA     | Cisco Certified Network Associate |            12075 |  10564 |  1511 |         87.49 |     65.03
+ IELTS    | IELTS Academic                    |             9711 |   8489 |  1222 |         87.42 |     64.85
+ ICAN-PE1 | ICAN Professional Examination I   |            11022 |   9630 |  1392 |         87.37 |     64.97
+(9 rows)
+
+
+--- EXPLAIN ANALYZE ---
+                                                               QUERY PLAN                                                               
+----------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=3641.21..3641.23 rows=9 width=46) (actual time=39.014..39.019 rows=9 loops=1)
+   Sort Key: (round(((100.0 * (count(*) FILTER (WHERE (r.score >= $2)))::numeric) / (NULLIF(count(r.result_id), 0))::numeric), 2)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   CTE params
+     ->  Result  (cost=0.00..0.01 rows=1 width=32) (actual time=0.001..0.001 rows=1 loops=1)
+   InitPlan 2 (returns $1)
+     ->  CTE Scan on params  (cost=0.00..0.02 rows=1 width=32) (actual time=0.002..0.003 rows=1 loops=1)
+   InitPlan 3 (returns $2)
+     ->  CTE Scan on params params_1  (cost=0.00..0.02 rows=1 width=32) (actual time=0.000..0.000 rows=1 loops=1)
+   ->  HashAggregate  (cost=3640.79..3641.02 rows=9 width=46) (actual time=38.996..39.004 rows=9 loops=1)
+         Group Key: e.code
+         Batches: 1  Memory Usage: 24kB
+         ->  Hash Join  (cost=1.20..2212.27 rows=95235 width=20) (actual time=0.023..19.362 rows=95235 loops=1)
+               Hash Cond: (r.exam_id = e.exam_id)
+               ->  Seq Scan on result r  (cost=0.00..1843.35 rows=95235 width=22) (actual time=0.005..5.788 rows=95235 loops=1)
+               ->  Hash  (cost=1.09..1.09 rows=9 width=14) (actual time=0.009..0.009 rows=9 loops=1)
+                     Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                     ->  Seq Scan on exam e  (cost=0.00..1.09 rows=9 width=14) (actual time=0.003..0.004 rows=9 loops=1)
+ Planning Time: 0.289 ms
+ Execution Time: 39.061 ms
+(20 rows)
+
+
+----- AFTER: 05_no_show_rate.sql -----
+
+=== Q5. No-show rate per centre ===
+
+  code  |  city  | booked | no_shows | no_show_pct 
+--------+--------+--------+----------+-------------
+ IBD-01 | Ibadan |  19702 |     3736 |       18.96
+ ABJ-01 | Abuja  |  26447 |     4997 |       18.89
+ ENU-01 | Enugu  |  14941 |     2813 |       18.83
+ KAN-01 | Kano   |  22926 |     4279 |       18.66
+ LOS-01 | Lagos  |  32804 |     5760 |       17.56
+(5 rows)
+
+
+--- EXPLAIN ANALYZE ---
+                                                                                QUERY PLAN                                                                                 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=4357.65..4357.66 rows=5 width=47) (actual time=57.036..58.985 rows=5 loops=1)
+   Sort Key: (round(((100.0 * (count(*) FILTER (WHERE (NOT sa.attended)))::numeric) / (NULLIF(count(sa.allocation_id), 0))::numeric), 2)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   ->  Finalize GroupAggregate  (cost=4356.86..4357.59 rows=5 width=47) (actual time=57.020..58.975 rows=5 loops=1)
+         Group Key: c.code
+         ->  Gather Merge  (cost=4356.86..4357.43 rows=5 width=23) (actual time=57.002..58.953 rows=10 loops=1)
+               Workers Planned: 1
+               Workers Launched: 1
+               ->  Sort  (cost=3356.85..3356.86 rows=5 width=23) (actual time=53.685..53.690 rows=5 loops=2)
+                     Sort Key: c.code
+                     Sort Method: quicksort  Memory: 25kB
+                     Worker 0:  Sort Method: quicksort  Memory: 25kB
+                     ->  Partial HashAggregate  (cost=3356.74..3356.79 rows=5 width=23) (actual time=53.666..53.671 rows=5 loops=2)
+                           Group Key: c.code
+                           Batches: 1  Memory Usage: 24kB
+                           Worker 0:  Batches: 1  Memory Usage: 24kB
+                           ->  Hash Join  (cost=81.14..2841.35 rows=68718 width=16) (actual time=0.818..40.574 rows=58410 loops=2)
+                                 Hash Cond: (es.centre_id = c.centre_id)
+                                 ->  Hash Join  (cost=80.03..2506.95 rows=68718 width=17) (actual time=0.774..26.763 rows=58410 loops=2)
+                                       Hash Cond: (sa.session_id = es.session_id)
+                                       ->  Parallel Seq Scan on seat_allocation sa  (cost=0.00..2246.18 rows=68718 width=17) (actual time=0.007..7.034 rows=58410 loops=2)
+                                       ->  Hash  (cost=53.90..53.90 rows=2090 width=16) (actual time=0.745..0.746 rows=2090 loops=2)
+                                             Buckets: 4096  Batches: 1  Memory Usage: 130kB
+                                             ->  Seq Scan on exam_session es  (cost=0.00..53.90 rows=2090 width=16) (actual time=0.010..0.297 rows=2090 loops=2)
+                                 ->  Hash  (cost=1.05..1.05 rows=5 width=15) (actual time=0.019..0.019 rows=5 loops=2)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                       ->  Seq Scan on centre c  (cost=0.00..1.05 rows=5 width=15) (actual time=0.011..0.012 rows=5 loops=2)
+ Planning Time: 0.319 ms
+ Execution Time: 59.065 ms
+(29 rows)
+
+
+----- AFTER: 06_revenue_per_centre.sql -----
+
+=== Q6. Revenue per centre (NGN, successful payments only) ===
+
+  code  |  city  | successful_payments | revenue_ngn 
+--------+--------+---------------------+-------------
+ LOS-01 | Lagos  |               32804 | ###,###,###
+ ABJ-01 | Abuja  |               26447 | ###,###,###
+ KAN-01 | Kano   |               22926 | 993,580,000
+ IBD-01 | Ibadan |               19702 | 891,040,000
+ ENU-01 | Enugu  |               14941 | 683,335,000
+(5 rows)
+
+
+--- EXPLAIN ANALYZE ---
+                                                                                         QUERY PLAN                                                                                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=10780.83..10780.85 rows=5 width=39) (actual time=166.746..170.232 rows=5 loops=1)
+   Sort Key: (sum(p.amount)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   ->  Finalize GroupAggregate  (cost=10780.10..10780.78 rows=5 width=39) (actual time=166.729..170.223 rows=5 loops=1)
+         Group Key: c.code
+         ->  Gather Merge  (cost=10780.10..10780.68 rows=5 width=39) (actual time=166.717..170.206 rows=10 loops=1)
+               Workers Planned: 1
+               Workers Launched: 1
+               ->  Sort  (cost=9780.09..9780.10 rows=5 width=39) (actual time=163.475..163.483 rows=5 loops=2)
+                     Sort Key: c.code
+                     Sort Method: quicksort  Memory: 25kB
+                     Worker 0:  Sort Method: quicksort  Memory: 25kB
+                     ->  Partial HashAggregate  (cost=9779.97..9780.03 rows=5 width=39) (actual time=163.443..163.453 rows=5 loops=2)
+                           Group Key: c.code
+                           Batches: 1  Memory Usage: 24kB
+                           Worker 0:  Batches: 1  Memory Usage: 24kB
+                           ->  Parallel Hash Join  (cost=6503.87..9436.00 rows=68794 width=13) (actual time=92.032..141.574 rows=58410 loops=2)
+                                 Hash Cond: (p.registration_id = r.registration_id)
+                                 ->  Parallel Seq Scan on payment p  (cost=0.00..2269.48 rows=68794 width=14) (actual time=0.009..14.784 rows=58410 loops=2)
+                                       Filter: (status = 'success'::text)
+                                       Rows Removed by Filter: 5814
+                                 ->  Parallel Hash  (cost=5644.90..5644.90 rows=68718 width=23) (actual time=91.254..91.260 rows=58410 loops=2)
+                                       Buckets: 131072  Batches: 1  Memory Usage: 7456kB
+                                       ->  Parallel Hash Join  (cost=2704.29..5644.90 rows=68718 width=23) (actual time=21.552..73.983 rows=58410 loops=2)
+                                             Hash Cond: (sa.registration_id = r.registration_id)
+                                             ->  Hash Join  (cost=81.14..2841.35 rows=68718 width=15) (actual time=0.770..35.909 rows=58410 loops=2)
+                                                   Hash Cond: (es.centre_id = c.centre_id)
+                                                   ->  Hash Join  (cost=80.03..2506.95 rows=68718 width=16) (actual time=0.705..22.847 rows=58410 loops=2)
+                                                         Hash Cond: (sa.session_id = es.session_id)
+                                                         ->  Parallel Seq Scan on seat_allocation sa  (cost=0.00..2246.18 rows=68718 width=16) (actual time=0.006..7.653 rows=58410 loops=2)
+                                                         ->  Hash  (cost=53.90..53.90 rows=2090 width=16) (actual time=0.674..0.675 rows=2090 loops=2)
+                                                               Buckets: 4096  Batches: 1  Memory Usage: 130kB
+                                                               ->  Seq Scan on exam_session es  (cost=0.00..53.90 rows=2090 width=16) (actual time=0.012..0.308 rows=2090 loops=2)
+                                                   ->  Hash  (cost=1.05..1.05 rows=5 width=15) (actual time=0.048..0.048 rows=5 loops=2)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                         ->  Seq Scan on centre c  (cost=0.00..1.05 rows=5 width=15) (actual time=0.028..0.029 rows=5 loops=2)
+                                             ->  Parallel Hash  (cost=1764.18..1764.18 rows=68718 width=8) (actual time=20.209..20.210 rows=58410 loops=2)
+                                                   Buckets: 131072  Batches: 1  Memory Usage: 5632kB
+                                                   ->  Parallel Seq Scan on registration r  (cost=0.00..1764.18 rows=68718 width=8) (actual time=0.009..7.898 rows=58410 loops=2)
+ Planning Time: 0.704 ms
+ Execution Time: 170.297 ms
+(41 rows)
+
+
+----- AFTER: 07_top_exams_by_revenue.sql -----
+
+=== Q7. Top exams by revenue (NGN, successful payments) ===
+
+   code   |               title               |          category          | successful_payments | revenue_ngn 
+----------+-----------------------------------+----------------------------+---------------------+-------------
+ PMP      | Project Management Professional   | professional_certification |               12921 | 969,075,000
+ ACCA-F6  | ACCA Taxation (TX-F6)             | professional_certification |               12893 | 773,580,000
+ ICAN-PE1 | ICAN Professional Examination I   | professional_certification |               13592 | 747,560,000
+ IELTS    | IELTS Academic                    | language_test              |               11852 | 711,120,000
+ TOEFL    | TOEFL iBT                         | language_test              |               12720 | 699,600,000
+ CCNA     | Cisco Certified Network Associate | professional_certification |               14351 | 645,795,000
+ AZ-900   | Microsoft Azure Fundamentals      | professional_certification |               14105 | 352,625,000
+ NNPC-REC | NNPC Graduate Recruitment Test    | recruitment_test           |               13469 | 202,035,000
+ CBN-REC  | CBN Recruitment Aptitude Test     | recruitment_test           |               10917 | 163,755,000
+(9 rows)
+
+
+--- EXPLAIN ANALYZE ---
+                                                                                            QUERY PLAN                                                                                             
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=10713.72..10713.74 rows=9 width=38) (actual time=153.442..157.465 rows=9 loops=1)
+   ->  Sort  (cost=10713.72..10713.74 rows=9 width=38) (actual time=153.440..157.462 rows=9 loops=1)
+         Sort Key: (sum(p.amount)) DESC
+         Sort Method: quicksort  Memory: 25kB
+         ->  Finalize GroupAggregate  (cost=10712.36..10713.58 rows=9 width=38) (actual time=153.410..157.447 rows=9 loops=1)
+               Group Key: e.code
+               ->  Gather Merge  (cost=10712.36..10713.40 rows=9 width=38) (actual time=153.395..157.419 rows=18 loops=1)
+                     Workers Planned: 1
+                     Workers Launched: 1
+                     ->  Sort  (cost=9712.35..9712.38 rows=9 width=38) (actual time=150.604..150.769 rows=9 loops=2)
+                           Sort Key: e.code
+                           Sort Method: quicksort  Memory: 25kB
+                           Worker 0:  Sort Method: quicksort  Memory: 25kB
+                           ->  Partial HashAggregate  (cost=9712.10..9712.21 rows=9 width=38) (actual time=150.569..150.737 rows=9 loops=2)
+                                 Group Key: e.code
+                                 Batches: 1  Memory Usage: 24kB
+                                 Worker 0:  Batches: 1  Memory Usage: 24kB
+                                 ->  Parallel Hash Join  (cost=6436.00..9368.13 rows=68794 width=12) (actual time=99.692..134.660 rows=58410 loops=2)
+                                       Hash Cond: (p.registration_id = r.registration_id)
+                                       ->  Parallel Seq Scan on payment p  (cost=0.00..2269.48 rows=68794 width=14) (actual time=0.013..12.575 rows=58410 loops=2)
+                                             Filter: (status = 'success'::text)
+                                             Rows Removed by Filter: 5814
+                                       ->  Parallel Hash  (cost=5577.03..5577.03 rows=68718 width=22) (actual time=98.915..99.077 rows=58410 loops=2)
+                                             Buckets: 131072  Batches: 1  Memory Usage: 7648kB
+                                             ->  Parallel Hash Join  (cost=2704.38..5577.03 rows=68718 width=22) (actual time=22.585..75.675 rows=58410 loops=2)
+                                                   Hash Cond: (sa.registration_id = r.registration_id)
+                                                   ->  Hash Join  (cost=81.23..2773.48 rows=68718 width=14) (actual time=0.770..35.869 rows=58410 loops=2)
+                                                         Hash Cond: (es.exam_id = e.exam_id)
+                                                         ->  Hash Join  (cost=80.03..2506.95 rows=68718 width=16) (actual time=0.718..25.307 rows=58410 loops=2)
+                                                               Hash Cond: (sa.session_id = es.session_id)
+                                                               ->  Parallel Seq Scan on seat_allocation sa  (cost=0.00..2246.18 rows=68718 width=16) (actual time=0.006..8.156 rows=58410 loops=2)
+                                                               ->  Hash  (cost=53.90..53.90 rows=2090 width=16) (actual time=0.683..0.684 rows=2090 loops=2)
+                                                                     Buckets: 4096  Batches: 1  Memory Usage: 130kB
+                                                                     ->  Seq Scan on exam_session es  (cost=0.00..53.90 rows=2090 width=16) (actual time=0.019..0.313 rows=2090 loops=2)
+                                                         ->  Hash  (cost=1.09..1.09 rows=9 width=14) (actual time=0.028..0.029 rows=9 loops=2)
+                                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                               ->  Seq Scan on exam e  (cost=0.00..1.09 rows=9 width=14) (actual time=0.020..0.022 rows=9 loops=2)
+                                                   ->  Parallel Hash  (cost=1764.18..1764.18 rows=68718 width=8) (actual time=21.223..21.223 rows=58410 loops=2)
+                                                         Buckets: 131072  Batches: 1  Memory Usage: 5632kB
+                                                         ->  Parallel Seq Scan on registration r  (cost=0.00..1764.18 rows=68718 width=8) (actual time=0.014..7.338 rows=58410 loops=2)
+ Planning Time: 1.050 ms
+ Execution Time: 157.546 ms
+(42 rows)
+
+
+----- AFTER: 08_peak_hours_utilisation.sql -----
+
+=== Q8. Allocations by start-hour (peak-hours analysis) ===
+
+ start_hour | sessions | allocations | avg_centre_capacity 
+------------+----------+-------------+---------------------
+          9 |      688 |       38292 |                94.5
+         13 |      698 |       38922 |                95.5
+         16 |      704 |       39606 |                95.5
+(3 rows)
+
+
+--- EXPLAIN ANALYZE ---
+                                                                 QUERY PLAN                                                                 
+--------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=15928.80..17107.44 rows=696 width=20) (actual time=80.047..91.647 rows=3 loops=1)
+   Group Key: ((EXTRACT(hour FROM es.start_time))::integer)
+   ->  Sort  (cost=15928.80..16220.85 rows=116820 width=20) (actual time=74.380..83.267 rows=116820 loops=1)
+         Sort Key: ((EXTRACT(hour FROM es.start_time))::integer), es.session_id
+         Sort Method: external merge  Disk: 3896kB
+         ->  Hash Right Join  (cost=80.03..3698.60 rows=116820 width=20) (actual time=0.376..42.839 rows=116820 loops=1)
+               Hash Cond: (sa.session_id = es.session_id)
+               ->  Seq Scan on seat_allocation sa  (cost=0.00..2727.20 rows=116820 width=16) (actual time=0.002..8.404 rows=116820 loops=1)
+               ->  Hash  (cost=53.90..53.90 rows=2090 width=16) (actual time=0.365..0.366 rows=2090 loops=1)
+                     Buckets: 4096  Batches: 1  Memory Usage: 130kB
+                     ->  Seq Scan on exam_session es  (cost=0.00..53.90 rows=2090 width=16) (actual time=0.005..0.183 rows=2090 loops=1)
+ Planning Time: 0.227 ms
+ Execution Time: 92.395 ms
+(13 rows)
+
+
+----- AFTER: 09_candidate_history.sql -----
+
+=== Q9. One candidate's exam history (help-desk lookup) ===
+
+ candidate  |   exam   | session_date | score | passed | payment 
+------------+----------+--------------+-------+--------+---------
+ Obi Bashir | AZ-900   | 2026-11-07   | 74.59 | t      | success
+ Obi Bashir | CBN-REC  | 2026-08-25   | 45.09 | f      | success
+ Obi Bashir | CBN-REC  | 2026-07-14   | 74.94 | t      | success
+ Obi Bashir | PMP      | 2026-04-14   | 64.00 | t      | success
+ Obi Bashir | ACCA-F6  | 2026-04-11   | 58.44 | t      | success
+ Obi Bashir | ICAN-PE1 | 2026-03-24   | 44.23 | f      | success
+ Obi Bashir | PMP      | 2026-03-03   | 58.13 | t      | success
+ Obi Bashir | NNPC-REC | 2025-12-06   | 77.81 | t      | success
+ Obi Bashir | ICAN-PE1 | 2025-11-15   | 88.50 | t      | success
+ Obi Bashir | IELTS    | 2025-11-01   | 55.98 | t      | success
+(10 rows)
+
+
+--- EXPLAIN ANALYZE ---
+                                                                            QUERY PLAN                                                                             
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=5.34..109.17 rows=8 width=23) (actual time=0.028..0.208 rows=22 loops=1)
+   ->  Nested Loop  (cost=4.93..105.14 rows=8 width=24) (actual time=0.024..0.148 rows=22 loops=1)
+         ->  Nested Loop  (cost=4.65..102.74 rows=8 width=28) (actual time=0.022..0.114 rows=22 loops=1)
+               Join Filter: (r.exam_id = e.exam_id)
+               Rows Removed by Join Filter: 98
+               ->  Nested Loop  (cost=4.65..100.66 rows=8 width=30) (actual time=0.014..0.093 rows=22 loops=1)
+                     ->  Bitmap Heap Scan on result r  (cost=4.35..34.18 rows=8 width=22) (actual time=0.008..0.028 rows=22 loops=1)
+                           Recheck Cond: (candidate_id = 3254)
+                           Heap Blocks: exact=22
+                           ->  Bitmap Index Scan on idx_result_candidate_id  (cost=0.00..4.35 rows=8 width=0) (actual time=0.004..0.004 rows=22 loops=1)
+                                 Index Cond: (candidate_id = 3254)
+                     ->  Index Scan using seat_allocation_pkey on seat_allocation sa  (cost=0.29..8.31 rows=1 width=24) (actual time=0.002..0.002 rows=1 loops=22)
+                           Index Cond: (allocation_id = r.allocation_id)
+               ->  Materialize  (cost=0.00..1.14 rows=9 width=14) (actual time=0.000..0.000 rows=5 loops=22)
+                     ->  Seq Scan on exam e  (cost=0.00..1.09 rows=9 width=14) (actual time=0.002..0.003 rows=9 loops=1)
+         ->  Index Scan using exam_session_pkey on exam_session es  (cost=0.28..0.30 rows=1 width=12) (actual time=0.001..0.001 rows=1 loops=22)
+               Index Cond: (session_id = sa.session_id)
+   ->  Index Scan using idx_payment_registration_id on payment p  (cost=0.42..0.49 rows=1 width=15) (actual time=0.002..0.002 rows=1 loops=22)
+         Index Cond: (registration_id = sa.registration_id)
+         Filter: (status = 'success'::text)
+         Rows Removed by Filter: 0
+ Planning Time: 0.475 ms
+ Execution Time: 0.230 ms
+(23 rows)
+
