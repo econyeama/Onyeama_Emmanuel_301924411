@@ -1,0 +1,954 @@
+===================================================================
+ Portfolio 4 — NoSQL (MongoDB) question bank (TestPoint CBT)
+===================================================================
+[p4] waiting for MongoDB to accept connections
+[p4] step 1 — create collections
+=== Creating collections ===
+questions count : 0
+attempts  count : 0
+=== Collections ready ===
+
+[p4] step 2 — install JSON schema validator + valid/invalid tests
+=== Installing JSON schema validator on questions ===
+=== Validator installed. Testing with valid + invalid documents ===
+PASS: valid MCQ accepted
+PASS: valid true/false accepted
+PASS: valid fill_in accepted
+PASS: valid short_answer (with image) accepted
+PASS: invalid MCQ rejected — Document failed validation
+PASS: invalid difficulty rejected — Document failed validation
+PASS: empty acceptable_answers rejected — Document failed validation
+=== Schema validation tests done. questions count: 4 ===
+
+[p4] step 3 — small readable seed (optional, replaced by bulk below)
+=== Seeding small readable dataset ===
+questions count after small seed: 13
+attempts count after small seed: 50
+=== Small seed done ===
+
+[p4] step 4 — bulk generate 42,000 questions + ~120,000 attempts
+[qb] connecting to MongoDB mongodb://127.0.0.1:27017 / db=testpoint
+[qb] dropping existing questions + attempts for a clean run
+[qb] generating 42,000 questions …
+[qb]   inserted 2,000 / 42000
+[qb]   inserted 4,000 / 42000
+[qb]   inserted 6,000 / 42000
+[qb]   inserted 8,000 / 42000
+[qb]   inserted 10,000 / 42000
+[qb]   inserted 12,000 / 42000
+[qb]   inserted 14,000 / 42000
+[qb]   inserted 16,000 / 42000
+[qb]   inserted 18,000 / 42000
+[qb]   inserted 20,000 / 42000
+[qb]   inserted 22,000 / 42000
+[qb]   inserted 24,000 / 42000
+[qb]   inserted 26,000 / 42000
+[qb]   inserted 28,000 / 42000
+[qb]   inserted 30,000 / 42000
+[qb]   inserted 32,000 / 42000
+[qb]   inserted 34,000 / 42000
+[qb]   inserted 36,000 / 42000
+[qb]   inserted 38,000 / 42000
+[qb]   inserted 40,000 / 42000
+[qb]   inserted 42,000 / 42000
+[qb]   total questions inserted: 42,000
+[qb] generating attempts (~5 per question on average) …
+[qb]   inserted 2,002 attempts
+[qb]   inserted 4,009 attempts
+[qb]   inserted 6,013 attempts
+[qb]   inserted 8,020 attempts
+[qb]   inserted 10,024 attempts
+[qb]   inserted 12,025 attempts
+[qb]   inserted 14,026 attempts
+[qb]   inserted 16,032 attempts
+[qb]   inserted 18,039 attempts
+[qb]   inserted 20,039 attempts
+[qb]   inserted 22,039 attempts
+[qb]   inserted 24,041 attempts
+[qb]   inserted 26,044 attempts
+[qb]   inserted 28,050 attempts
+[qb]   inserted 30,052 attempts
+[qb]   inserted 32,057 attempts
+[qb]   inserted 34,059 attempts
+[qb]   inserted 36,060 attempts
+[qb]   inserted 38,060 attempts
+[qb]   inserted 40,069 attempts
+[qb]   inserted 42,074 attempts
+[qb]   inserted 44,074 attempts
+[qb]   inserted 46,075 attempts
+[qb]   inserted 48,077 attempts
+[qb]   inserted 50,077 attempts
+[qb]   inserted 52,081 attempts
+[qb]   inserted 54,082 attempts
+[qb]   inserted 56,088 attempts
+[qb]   inserted 58,091 attempts
+[qb]   inserted 60,097 attempts
+[qb]   inserted 62,098 attempts
+[qb]   inserted 64,099 attempts
+[qb]   inserted 66,105 attempts
+[qb]   inserted 68,106 attempts
+[qb]   inserted 70,106 attempts
+[qb]   inserted 72,106 attempts
+[qb]   inserted 74,109 attempts
+[qb]   inserted 76,115 attempts
+[qb]   inserted 78,120 attempts
+[qb]   inserted 80,126 attempts
+[qb]   inserted 82,126 attempts
+[qb]   inserted 84,127 attempts
+[qb]   inserted 86,136 attempts
+[qb]   inserted 88,139 attempts
+[qb]   inserted 90,140 attempts
+[qb]   inserted 92,143 attempts
+[qb]   inserted 94,144 attempts
+[qb]   inserted 96,146 attempts
+[qb]   inserted 98,148 attempts
+[qb]   inserted 100,149 attempts
+[qb]   inserted 102,155 attempts
+[qb]   inserted 104,156 attempts
+[qb]   inserted 106,156 attempts
+[qb]   inserted 108,160 attempts
+[qb]   inserted 110,162 attempts
+[qb]   inserted 112,165 attempts
+[qb]   inserted 114,166 attempts
+[qb]   inserted 116,168 attempts
+[qb]   inserted 118,168 attempts
+[qb]   inserted 120,168 attempts
+[qb]   inserted 122,172 attempts
+[qb]   inserted 124,174 attempts
+[qb]   inserted 126,176 attempts
+[qb]   inserted 128,179 attempts
+[qb]   inserted 130,179 attempts
+[qb]   inserted 132,179 attempts
+[qb]   inserted 134,180 attempts
+[qb]   inserted 136,180 attempts
+[qb]   inserted 138,180 attempts
+[qb]   total attempts inserted: 138,268
+
+==============================================================
+ MONGODB BULK DATA SUMMARY — TestPoint CBT question bank
+==============================================================
+ questions        : 42,000
+ attempts         : 138,268
+ by type:
+   fill_in       :  8,264
+   mcq           : 21,120
+   short_answer  :  4,169
+   true_false    :  8,447
+ by difficulty:
+   easy          : 16,813
+   hard          :  8,489
+   medium        : 16,698
+ by subject (top 12):
+   Accounting              :  3,584
+   Numerical Reasoning     :  3,572
+   Mathematics             :  3,568
+   Networking              :  3,544
+   English Language        :  3,536
+   Project Management      :  3,532
+   General Knowledge       :  3,531
+   Verbal Reasoning        :  3,479
+   Cloud Computing         :  3,471
+   IT Fundamentals         :  3,424
+   Quantitative Reasoning  :  3,405
+   Current Affairs         :  3,354
+==============================================================
+[qb] DONE. Screenshot this terminal output for your evidence.
+
+[p4] step 5 — aggregations
+=== A1. Questions per subject and difficulty ===
+[
+  {
+    _id: {
+      subject: 'Accounting',
+      difficulty: 'easy'
+    },
+    count: 1404
+  },
+  {
+    _id: {
+      subject: 'Accounting',
+      difficulty: 'hard'
+    },
+    count: 736
+  },
+  {
+    _id: {
+      subject: 'Accounting',
+      difficulty: 'medium'
+    },
+    count: 1444
+  },
+  {
+    _id: {
+      subject: 'Cloud Computing',
+      difficulty: 'easy'
+    },
+    count: 1383
+  },
+  {
+    _id: {
+      subject: 'Cloud Computing',
+      difficulty: 'hard'
+    },
+    count: 691
+  },
+  {
+    _id: {
+      subject: 'Cloud Computing',
+      difficulty: 'medium'
+    },
+    count: 1397
+  },
+  {
+    _id: {
+      subject: 'Current Affairs',
+      difficulty: 'easy'
+    },
+    count: 1360
+  },
+  {
+    _id: {
+      subject: 'Current Affairs',
+      difficulty: 'hard'
+    },
+    count: 670
+  },
+  {
+    _id: {
+      subject: 'Current Affairs',
+      difficulty: 'medium'
+    },
+    count: 1324
+  },
+  {
+    _id: {
+      subject: 'English Language',
+      difficulty: 'easy'
+    },
+    count: 1396
+  },
+  {
+    _id: {
+      subject: 'English Language',
+      difficulty: 'hard'
+    },
+    count: 675
+  },
+  {
+    _id: {
+      subject: 'English Language',
+      difficulty: 'medium'
+    },
+    count: 1465
+  },
+  {
+    _id: {
+      subject: 'General Knowledge',
+      difficulty: 'easy'
+    },
+    count: 1423
+  },
+  {
+    _id: {
+      subject: 'General Knowledge',
+      difficulty: 'hard'
+    },
+    count: 670
+  },
+  {
+    _id: {
+      subject: 'General Knowledge',
+      difficulty: 'medium'
+    },
+    count: 1438
+  },
+  {
+    _id: {
+      subject: 'IT Fundamentals',
+      difficulty: 'easy'
+    },
+    count: 1349
+  },
+  {
+    _id: {
+      subject: 'IT Fundamentals',
+      difficulty: 'hard'
+    },
+    count: 742
+  },
+  {
+    _id: {
+      subject: 'IT Fundamentals',
+      difficulty: 'medium'
+    },
+    count: 1333
+  },
+  {
+    _id: {
+      subject: 'Mathematics',
+      difficulty: 'easy'
+    },
+    count: 1472
+  },
+  {
+    _id: {
+      subject: 'Mathematics',
+      difficulty: 'hard'
+    },
+    count: 699
+  },
+  {
+    _id: {
+      subject: 'Mathematics',
+      difficulty: 'medium'
+    },
+    count: 1397
+  },
+  {
+    _id: {
+      subject: 'Networking',
+      difficulty: 'easy'
+    },
+    count: 1403
+  },
+  {
+    _id: {
+      subject: 'Networking',
+      difficulty: 'hard'
+    },
+    count: 734
+  },
+  {
+    _id: {
+      subject: 'Networking',
+      difficulty: 'medium'
+    },
+    count: 1407
+  },
+  {
+    _id: {
+      subject: 'Numerical Reasoning',
+      difficulty: 'easy'
+    },
+    count: 1439
+  },
+  {
+    _id: {
+      subject: 'Numerical Reasoning',
+      difficulty: 'hard'
+    },
+    count: 721
+  },
+  {
+    _id: {
+      subject: 'Numerical Reasoning',
+      difficulty: 'medium'
+    },
+    count: 1412
+  },
+  {
+    _id: {
+      subject: 'Project Management',
+      difficulty: 'easy'
+    },
+    count: 1439
+  },
+  {
+    _id: {
+      subject: 'Project Management',
+      difficulty: 'hard'
+    },
+    count: 718
+  },
+  {
+    _id: {
+      subject: 'Project Management',
+      difficulty: 'medium'
+    },
+    count: 1375
+  },
+  {
+    _id: {
+      subject: 'Quantitative Reasoning',
+      difficulty: 'easy'
+    },
+    count: 1373
+  },
+  {
+    _id: {
+      subject: 'Quantitative Reasoning',
+      difficulty: 'hard'
+    },
+    count: 683
+  },
+  {
+    _id: {
+      subject: 'Quantitative Reasoning',
+      difficulty: 'medium'
+    },
+    count: 1349
+  },
+  {
+    _id: {
+      subject: 'Verbal Reasoning',
+      difficulty: 'easy'
+    },
+    count: 1372
+  },
+  {
+    _id: {
+      subject: 'Verbal Reasoning',
+      difficulty: 'hard'
+    },
+    count: 750
+  },
+  {
+    _id: {
+      subject: 'Verbal Reasoning',
+      difficulty: 'medium'
+    },
+    count: 1357
+  }
+]
+
+=== A2. Average score per question (top 10 by attempts) ===
+[
+  {
+    attempt_count: 10,
+    question_id: ObjectId('6af458a81e7813604fa7eedf'),
+    subject: 'Mathematics',
+    topic: 'Geometry',
+    type: 'mcq',
+    avg_score: 0.61,
+    pass_rate: 90
+  },
+  {
+    attempt_count: 10,
+    question_id: ObjectId('6af458a71e7813604fa78e12'),
+    subject: 'Numerical Reasoning',
+    topic: 'Data Interpretation',
+    type: 'true_false',
+    avg_score: 0.63,
+    pass_rate: 80
+  },
+  {
+    attempt_count: 10,
+    question_id: ObjectId('6af458a81e7813604fa7a1b1'),
+    subject: 'Verbal Reasoning',
+    topic: 'Syllogisms',
+    type: 'mcq',
+    avg_score: 0.48,
+    pass_rate: 50
+  },
+  {
+    attempt_count: 10,
+    question_id: ObjectId('6af458a81e7813604fa7c3b4'),
+    subject: 'Accounting',
+    topic: 'Cost Accounting',
+    type: 'fill_in',
+    avg_score: 0.46,
+    pass_rate: 50
+  },
+  {
+    attempt_count: 10,
+    question_id: ObjectId('6af458a81e7813604fa7b142'),
+    subject: 'IT Fundamentals',
+    topic: 'Networking',
+    type: 'mcq',
+    avg_score: 0.55,
+    pass_rate: 70
+  },
+  {
+    attempt_count: 10,
+    question_id: ObjectId('6af458a81e7813604fa7bcd7'),
+    subject: 'General Knowledge',
+    topic: 'Sports',
+    type: 'mcq',
+    avg_score: 0.63,
+    pass_rate: 70
+  },
+  {
+    attempt_count: 10,
+    question_id: ObjectId('6af458a71e7813604fa76c0f'),
+    subject: 'Current Affairs',
+    topic: 'Economy',
+    type: 'mcq',
+    avg_score: 0.45,
+    pass_rate: 30
+  },
+  {
+    attempt_count: 10,
+    question_id: ObjectId('6af458a81e7813604fa7e71a'),
+    subject: 'Current Affairs',
+    topic: 'Nigerian Government',
+    type: 'short_answer',
+    avg_score: 0.52,
+    pass_rate: 60
+  },
+  {
+    attempt_count: 10,
+    question_id: ObjectId('6af458a81e7813604fa7beff'),
+    subject: 'Numerical Reasoning',
+    topic: 'Data Interpretation',
+    type: 'mcq',
+    avg_score: 0.64,
+    pass_rate: 70
+  },
+  {
+    attempt_count: 10,
+    question_id: ObjectId('6af458a81e7813604fa7c5cf'),
+    subject: 'Quantitative Reasoning',
+    topic: 'Mixtures',
+    type: 'fill_in',
+    avg_score: 0.54,
+    pass_rate: 60
+  }
+]
+
+=== A3. Pass rate per subject (attempts → questions → group by subject) ===
+[
+  {
+    attempts: 11147,
+    subject: 'Quantitative Reasoning',
+    pass_rate_pct: 59.55,
+    avg_score: 0.537
+  },
+  {
+    attempts: 11178,
+    subject: 'Current Affairs',
+    pass_rate_pct: 59.48,
+    avg_score: 0.532
+  },
+  {
+    attempts: 11626,
+    subject: 'General Knowledge',
+    pass_rate_pct: 59.48,
+    avg_score: 0.534
+  },
+  {
+    attempts: 11926,
+    subject: 'Mathematics',
+    pass_rate_pct: 59.34,
+    avg_score: 0.533
+  },
+  {
+    attempts: 11772,
+    subject: 'Numerical Reasoning',
+    pass_rate_pct: 59.18,
+    avg_score: 0.534
+  },
+  {
+    attempts: 11376,
+    subject: 'Networking',
+    pass_rate_pct: 59.09,
+    avg_score: 0.533
+  },
+  {
+    attempts: 11462,
+    subject: 'English Language',
+    pass_rate_pct: 59.06,
+    avg_score: 0.534
+  },
+  {
+    attempts: 11371,
+    subject: 'Verbal Reasoning',
+    pass_rate_pct: 59.03,
+    avg_score: 0.532
+  },
+  {
+    attempts: 11501,
+    subject: 'IT Fundamentals',
+    pass_rate_pct: 59.01,
+    avg_score: 0.531
+  },
+  {
+    attempts: 11472,
+    subject: 'Cloud Computing',
+    pass_rate_pct: 58.98,
+    avg_score: 0.534
+  },
+  {
+    attempts: 11900,
+    subject: 'Accounting',
+    pass_rate_pct: 58.73,
+    avg_score: 0.532
+  },
+  {
+    attempts: 11537,
+    subject: 'Project Management',
+    pass_rate_pct: 57.74,
+    avg_score: 0.53
+  }
+]
+
+=== A4 (bonus). Question-type distribution per exam body ===
+[
+  {
+    _id: {
+      exam_body: 'ACCA',
+      type: 'fill_in'
+    },
+    count: 610
+  },
+  {
+    _id: {
+      exam_body: 'ACCA',
+      type: 'mcq'
+    },
+    count: 1637
+  },
+  {
+    _id: {
+      exam_body: 'ACCA',
+      type: 'short_answer'
+    },
+    count: 356
+  },
+  {
+    _id: {
+      exam_body: 'ACCA',
+      type: 'true_false'
+    },
+    count: 669
+  },
+  {
+    _id: {
+      exam_body: 'British Council',
+      type: 'fill_in'
+    },
+    count: 634
+  },
+  {
+    _id: {
+      exam_body: 'British Council',
+      type: 'mcq'
+    },
+    count: 1591
+  },
+  {
+    _id: {
+      exam_body: 'British Council',
+      type: 'short_answer'
+    },
+    count: 305
+  },
+  {
+    _id: {
+      exam_body: 'British Council',
+      type: 'true_false'
+    },
+    count: 654
+  },
+  {
+    _id: {
+      exam_body: 'CBN',
+      type: 'fill_in'
+    },
+    count: 677
+  },
+  {
+    _id: {
+      exam_body: 'CBN',
+      type: 'mcq'
+    },
+    count: 1571
+  },
+  {
+    _id: {
+      exam_body: 'CBN',
+      type: 'short_answer'
+    },
+    count: 324
+  },
+  {
+    _id: {
+      exam_body: 'CBN',
+      type: 'true_false'
+    },
+    count: 662
+  },
+  {
+    _id: {
+      exam_body: 'Cisco',
+      type: 'fill_in'
+    },
+    count: 647
+  },
+  {
+    _id: {
+      exam_body: 'Cisco',
+      type: 'mcq'
+    },
+    count: 1515
+  },
+  {
+    _id: {
+      exam_body: 'Cisco',
+      type: 'short_answer'
+    },
+    count: 333
+  },
+  {
+    _id: {
+      exam_body: 'Cisco',
+      type: 'true_false'
+    },
+    count: 646
+  },
+  {
+    _id: {
+      exam_body: 'Dragnet',
+      type: 'fill_in'
+    },
+    count: 626
+  },
+  {
+    _id: {
+      exam_body: 'Dragnet',
+      type: 'mcq'
+    },
+    count: 1630
+  },
+  {
+    _id: {
+      exam_body: 'Dragnet',
+      type: 'short_answer'
+    },
+    count: 349
+  },
+  {
+    _id: {
+      exam_body: 'Dragnet',
+      type: 'true_false'
+    },
+    count: 621
+  },
+  {
+    _id: {
+      exam_body: 'ETS',
+      type: 'fill_in'
+    },
+    count: 675
+  },
+  {
+    _id: {
+      exam_body: 'ETS',
+      type: 'mcq'
+    },
+    count: 1625
+  },
+  {
+    _id: {
+      exam_body: 'ETS',
+      type: 'short_answer'
+    },
+    count: 282
+  },
+  {
+    _id: {
+      exam_body: 'ETS',
+      type: 'true_false'
+    },
+    count: 672
+  },
+  {
+    _id: {
+      exam_body: 'FIRS',
+      type: 'fill_in'
+    },
+    count: 611
+  },
+  {
+    _id: {
+      exam_body: 'FIRS',
+      type: 'mcq'
+    },
+    count: 1551
+  },
+  {
+    _id: {
+      exam_body: 'FIRS',
+      type: 'short_answer'
+    },
+    count: 344
+  },
+  {
+    _id: {
+      exam_body: 'FIRS',
+      type: 'true_false'
+    },
+    count: 641
+  },
+  {
+    _id: {
+      exam_body: 'ICAN',
+      type: 'fill_in'
+    },
+    count: 610
+  },
+  {
+    _id: {
+      exam_body: 'ICAN',
+      type: 'mcq'
+    },
+    count: 1692
+  },
+  {
+    _id: {
+      exam_body: 'ICAN',
+      type: 'short_answer'
+    },
+    count: 314
+  },
+  {
+    _id: {
+      exam_body: 'ICAN',
+      type: 'true_false'
+    },
+    count: 675
+  },
+  {
+    _id: {
+      exam_body: 'Microsoft',
+      type: 'fill_in'
+    },
+    count: 610
+  },
+  {
+    _id: {
+      exam_body: 'Microsoft',
+      type: 'mcq'
+    },
+    count: 1635
+  },
+  {
+    _id: {
+      exam_body: 'Microsoft',
+      type: 'short_answer'
+    },
+    count: 317
+  },
+  {
+    _id: {
+      exam_body: 'Microsoft',
+      type: 'true_false'
+    },
+    count: 638
+  },
+  {
+    _id: {
+      exam_body: 'NECO',
+      type: 'fill_in'
+    },
+    count: 647
+  },
+  {
+    _id: {
+      exam_body: 'NECO',
+      type: 'mcq'
+    },
+    count: 1641
+  },
+  {
+    _id: {
+      exam_body: 'NECO',
+      type: 'short_answer'
+    },
+    count: 288
+  },
+  {
+    _id: {
+      exam_body: 'NECO',
+      type: 'true_false'
+    },
+    count: 669
+  },
+  {
+    _id: {
+      exam_body: 'NNPC',
+      type: 'fill_in'
+    },
+    count: 631
+  },
+  {
+    _id: {
+      exam_body: 'NNPC',
+      type: 'mcq'
+    },
+    count: 1663
+  },
+  {
+    _id: {
+      exam_body: 'NNPC',
+      type: 'short_answer'
+    },
+    count: 304
+  },
+  {
+    _id: {
+      exam_body: 'NNPC',
+      type: 'true_false'
+    },
+    count: 617
+  },
+  {
+    _id: {
+      exam_body: 'PMI',
+      type: 'fill_in'
+    },
+    count: 640
+  },
+  {
+    _id: {
+      exam_body: 'PMI',
+      type: 'mcq'
+    },
+    count: 1696
+  },
+  {
+    _id: {
+      exam_body: 'PMI',
+      type: 'short_answer'
+    },
+    count: 346
+  },
+  {
+    _id: {
+      exam_body: 'PMI',
+      type: 'true_false'
+    },
+    count: 654
+  },
+  {
+    _id: {
+      exam_body: 'WAEC',
+      type: 'fill_in'
+    },
+    count: 646
+  },
+  {
+    _id: {
+      exam_body: 'WAEC',
+      type: 'mcq'
+    },
+    count: 1673
+  },
+  {
+    _id: {
+      exam_body: 'WAEC',
+      type: 'short_answer'
+    },
+    count: 307
+  },
+  {
+    _id: {
+      exam_body: 'WAEC',
+      type: 'true_false'
+    },
+    count: 629
+  }
+]
+=== Aggregations done ===
+
+[p4] step 6 — COLLSCAN → IXSCAN index demo
+MongoServerError: index not found with name [idx_subject_difficulty_1]
