@@ -952,3 +952,5 @@ attempts count after small seed: 50
 
 [p4] step 6 — COLLSCAN → IXSCAN index demo
 MongoServerError: index not found with name [idx_subject_difficulty_1]
+[p4] step 6 (re-run after drop-index fix) — COLLSCAN → IXSCAN index demo
+MongoNetworkError: connect ECONNREFUSED 127.0.0.1:27017, connect ECONNREFUSED ::1:27017

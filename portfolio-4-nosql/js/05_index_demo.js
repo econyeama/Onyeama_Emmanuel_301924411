@@ -17,8 +17,9 @@
 db = db.getSiblingDB('testpoint');
 
 // Drop any pre-existing index on these fields for a clean BEFORE.
-db.questions.dropIndex('idx_subject_difficulty_1');
-db.questions.dropIndex('subject_1_difficulty_1');
+for (const n of ['idx_subject_difficulty_1', 'subject_1_difficulty_1']) {
+  try { db.questions.dropIndex(n); } catch (e) { /* index not there yet: fine */ }
+}
 
 const FILTER = { subject: 'Mathematics', difficulty: 'hard' };
 

@@ -1,0 +1,200 @@
+MY RESULTS — TestPoint CBT — 2026-11-11 11:59 UTC
+
+===== P1: bulk data + row counts =====
+ candidates       :   12,000
+ sessions         :    2,090
+ seat allocations :  116,820   (CA target: ≥ 50,000)
+ payments         :  128,449
+ results          :   95,235
+        t        | count  
+-----------------+--------
+ seat            |    450
+ exam_session    |   2091
+ candidate       |  12003
+ result          |  95235
+ seat_allocation | 116823
+ payment         | 128452
+(6 rows)
+
+===== P1: constraint tests =====
+ T1. UNIQUE candidate per session: c1 gets a 2nd seat in S1          | PASS   | duplicate key value violates unique constraint "uq_allocation_candidate_per_session"
+ T2. UNIQUE seat per session: seat A given to c2 in S1               | PASS   | duplicate key value violates unique constraint "uq_allocation_seat_per_session"
+ T3. EXCLUDE overlap: c1 booked into overlapping S2                  | PASS   | conflicting key value violates exclusion constraint "excl_candidate_no_overlap"
+ T4. trigger: seat from another centre (Abuja seat in Lagos session) | PASS   | Seat 121 is not in the centre of session 2091
+ T5. trigger: seat under maintenance                                 | PASS   | Seat A017 is maintenance, not active
+ T6. trigger: registration of another candidate                      | PASS   | Registration 116821 is not this candidate's registration for this exam
+ T7. CHECK payment > 0: amount = 0                                   | PASS   | new row for relation "payment" violates check constraint "chk_payment_amount_positive"
+ T8. CHECK payment <= 100000: amount = 250000                        | PASS   | new row for relation "payment" violates check constraint "chk_payment_amount_reasonable"
+ T9. UNIQUE payment reference: same reference twice                  | PASS   | duplicate key value violates unique constraint "payment_reference_key"
+ T10. CHECK score 0-100: score = 150                                 | PASS   | new row for relation "result" violates check constraint "chk_result_score_range"
+ T11. session that ends before it starts                             | PASS   | range lower bound must be less than or equal to range upper bound
+ T12. CHECK duration 30-480 min: 600-minute exam                     | PASS   | new row for relation "exam" violates check constraint "exam_duration_minutes_check"
+ T13. CHECK category: unknown exam category                          | PASS   | new row for relation "exam" violates check constraint "exam_category_check"
+ T14. UNIQUE candidate email                                         | PASS   | duplicate key value violates unique constraint "candidate_email_key"
+ T15. trigger: session already full (60 of 60 seats)                 | PASS   | Session 2094 is full: centre capacity is 60, already allocated 60
+Result: 15 of 15 bad inserts were rejected. (All test rows rolled back.)
+
+===== P2: BEFORE / AFTER timings =====
+Query                               BEFORE (ms)   AFTER (ms)  speed-up
+01_free_seats.sql                         0.321        0.175      1.8x
+02_candidates_per_exam_month.sql        197.253      202.763      1.0x
+03_centre_utilisation.sql               153.663      162.527      0.9x
+04_pass_rate.sql                         38.623       39.061      1.0x
+05_no_show_rate.sql                      55.785       59.065      0.9x
+06_revenue_per_centre.sql               143.519      170.297      0.8x
+07_top_exams_by_revenue.sql             140.637      157.546      0.9x
+08_peak_hours_utilisation.sql           110.376       92.395      1.2x
+09_candidate_history.sql                 23.420        0.230    101.8x
+--- Q9 plans ---
+[before]
+               ->  Seq Scan on payment p  (cost=0.00..2930.61 rows=116722 width=15) (actual time=0.003..12.848 rows=116820 loops=1)
+                           ->  Seq Scan on result r  (cost=0.00..2081.44 rows=8 width=22) (actual time=0.090..4.465 rows=22 loops=1)
+[after]
+                     ->  Bitmap Heap Scan on result r  (cost=4.35..34.18 rows=8 width=22) (actual time=0.008..0.028 rows=22 loops=1)
+                           ->  Bitmap Index Scan on idx_result_candidate_id  (cost=0.00..4.35 rows=8 width=0) (actual time=0.004..0.004 rows=22 loops=1)
+   ->  Index Scan using idx_payment_registration_id on payment p  (cost=0.42..0.49 rows=1 width=15) (actual time=0.002..0.002 rows=1 loops=22)
+
+===== P3: commit / rollback + race demos =====
+        116820 |      116820 |   128449
+=== DEMO A — candidate 1 takes seat 2 , valid payment ⇒ COMMIT ===
+        116890
+        116821 |      116821 |   128450
+=== DEMO B — candidate 2 takes seat 6 , payment ₦0 ⇒ ERROR ⇒ ROLLBACK ===
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-3-transactions-concurrency/sql/02_commit_rollback_demo.sql:54: ERROR:  allocate_seat: payment amount must be > 0 (got 0)
+        116821 |      116821 |   128450
+↑ counts UNCHANGED since DEMO A — nothing half-written
+ rows_holding_seat_b 
+                   0
+↑ 0: seat 6 is still free
+=== DEMO C — candidate 2 tries seat 6 again with a valid payment ⇒ COMMIT ===
+        116892
+  PART 1 — THE BUG: check-then-insert with no unique rule (seat_allocation_bug)
+  >>> BUG: two candidates now hold the same computer in the same session.
+  PART 2 — FIX 1: a UNIQUE index on (seat_id, session_id)
+       ERROR [23505]: duplicate key value violates unique constraint "bug_seat_unique"
+  >>> FIXED: B waited for A, then got a unique_violation. One holder only.
+  PART 3 — FIX 2: allocate_seat() locks the seat row (SELECT … FOR UPDATE)
+       ERROR [P0001]: allocate_seat: seat 1 is already allocated in session 2096
+  >>> FIXED: B queued behind A's row lock, then got a clear 'already allocated' message.
+  PART 4 — FIX 3: SERIALIZABLE stops the bug even with NO unique index
+       ERROR [40001]: could not serialize access due to read/write dependencies among transactions
+  >>> FIXED: both read 'seat free' and both wrote it, so PostgreSQL
+  PART 5 — READ COMMITTED vs REPEATABLE READ (counting booked seats)
+  >>> A saw the count change inside ONE transaction (non-repeatable read).
+  >>> A kept its snapshot until COMMIT; the new booking appears afterwards.
+  PART 6 — DEADLOCK: two desks lock two seats in opposite order
+       ERROR [40P01]: deadlock detected
+  >>> PostgreSQL detected the cycle after deadlock_timeout (1s) and
+  >>> Same two locks, same order: B simply waits its turn. No deadlock.
+
+===== P4: MongoDB =====
+PASS: valid MCQ accepted
+PASS: valid true/false accepted
+PASS: valid fill_in accepted
+PASS: valid short_answer (with image) accepted
+PASS: invalid MCQ rejected — Document failed validation
+PASS: invalid difficulty rejected — Document failed validation
+PASS: empty acceptable_answers rejected — Document failed validation
+ questions        : 42,000
+ attempts         : 138,268
+
+===== P5: partitions + pruning =====
+Rows per partition (exact; screenshot this for evidence):
+  month  | rows 
+ 2024_09 |   36
+ 2024_10 | 2401
+ 2024_11 | 4752
+ 2024_12 | 5397
+ 2025_01 | 4571
+ 2025_02 | 3985
+ 2025_03 | 4582
+ 2025_04 | 4364
+ 2025_05 | 4581
+ 2025_06 | 4790
+ 2025_07 | 4264
+ 2025_08 | 4577
+ 2025_09 | 4193
+ 2025_10 | 4620
+ 2025_11 | 4631
+ 2025_12 | 4531
+ 2026_01 | 4863
+ 2026_02 | 4326
+ 2026_03 | 4623
+ 2026_04 | 4605
+ 2026_05 | 4623
+ 2026_06 | 4518
+ 2026_07 | 4926
+ 2026_08 | 4738
+ 2026_09 | 4555
+ 2026_10 | 4283
+ 2026_11 | 4488
+(27 rows)
+ rows_in_original | rows_in_partitioned 
+           116823 |              116823
+(1 row)
+=== Partition pruning demo ===
+--- WITHOUT date filter: ALL partitions scanned ---
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
+ Aggregate (actual rows=1 loops=1)
+   ->  Append (actual rows=116823 loops=1)
+ Planning Time: 0.250 ms
+ Execution Time: 8.497 ms
+(34 rows)
+--- WITH a one-month filter ( 2025-11-01 ): only ONE partition scanned ---
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate (actual rows=1 loops=1)
+   ->  Seq Scan on seat_allocation_part_2025_11 seat_allocation_part (actual rows=4631 loops=1)
+         Filter: ((allocated_at >= '2025-11-01 00:00:00+01'::timestamp with time zone) AND (allocated_at < '2025-12-01 00:00:00+01'::timestamp with time zone))
+ Planning Time: 0.133 ms
+ Execution Time: 0.483 ms
+(5 rows)
+--- same one-month question on the UNPARTITIONED table ---
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate (actual rows=1 loops=1)
+   ->  Seq Scan on seat_allocation (actual rows=4631 loops=1)
+         Filter: ((allocated_at >= '2025-11-01 00:00:00+01'::timestamp with time zone) AND (allocated_at < '2025-12-01 00:00:00+01'::timestamp with time zone))
+         Rows Removed by Filter: 112192
+ Planning Time: 0.060 ms
+ Execution Time: 8.785 ms
+===== P5: replica =====
+ Portfolio 5 — primary + streaming read replica
+[repl] primary (5432) — SELECT pg_is_in_recovery();
+ primary_is_in_recovery 
+ f
+[repl] replica (5433) — SELECT pg_is_in_recovery();
+ replica_is_in_recovery 
+ t
+ walreceiver      | streaming | async      | 0/10000000 | 0/10000000 | 0/10000000 | 0/10000000
+[repl] Replication is now streaming: writes on the primary (port 5432)
+[repl] To connect to the replica for read-only queries:
+ server  | port | in_recovery 
+ REPLICA | 5433 | t
+--- T1. Attempt an INSERT on the REPLICA (port 5433). Must be rejected ---
+    (expected: ERROR: cannot execute INSERT in a read-only transaction)
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-5-distributed-cloud/sql/03_replica_tests.sql:38: ERROR:  cannot execute INSERT in a read-only transaction
+                           0
+ server  | port | in_recovery 
+ PRIMARY | 5432 | f
+--- T2. Insert a marker row on the PRIMARY (port 5432), then read it on the REPLICA ---
+    Primary: marker row inserted. Waiting 1 s for streaming replay …
+ P5-REPLICA-PROOF | Replica proof row |      100.00
+ walreceiver      | streaming | async      | 0/100043D0   | 0/100043D0       |         0
+--- T3b. Replica-side view: how far behind is recovery? ---
+ replay_lag_interval | last_replayed_lsn 
+ 00:00:01.027414     | 0/100043D0
+    Replica after cleanup (marker rows gone via streaming):
+                        0
+  T1 — the replica INSERT error (read-only transaction).
+
+===== GitHub =====
+https://github.com/econyeama/Onyeama_Emmanuel_301924411
+6e04a8e Portfolio 5: scripts and real output
+8ffb4a0 Portfolio 4: scripts and real output
+da20035 Portfolio 3: scripts and real output
+9c81f33 Portfolio 2: scripts and real output
+86ddf4c Portfolio 1: scripts and real output
+616a022 Setup: README, setup.sh
+a60c571 Initial commit
