@@ -954,3 +954,96 @@ attempts count after small seed: 50
 MongoServerError: index not found with name [idx_subject_difficulty_1]
 [p4] step 6 (re-run after drop-index fix) — COLLSCAN → IXSCAN index demo
 MongoNetworkError: connect ECONNREFUSED 127.0.0.1:27017, connect ECONNREFUSED ::1:27017
+[p4] step 6 (re-run after drop-index fix) — COLLSCAN → IXSCAN index demo
+=== BEFORE index — explain() ===
+winningPlan.stage      : COLLSCAN
+executionStats.totalDocsExamined : 42000
+executionStats.nReturned         : 699
+executionStats.executionTimeMillis: 18
+
+--- full winningPlan (before) ---
+{
+  isCached: false,
+  stage: 'COLLSCAN',
+  filter: {
+    '$and': [
+      {
+        difficulty: {
+          '$eq': 'hard'
+        }
+      },
+      {
+        subject: {
+          '$eq': 'Mathematics'
+        }
+      }
+    ]
+  },
+  direction: 'forward'
+}
+
+=== Creating compound index { subject: 1, difficulty: 1 } ===
+
+=== AFTER index — explain() ===
+winningPlan.stage      : FETCH
+inputStage.stage       : IXSCAN
+inputStage.indexName   : idx_subject_difficulty_1
+executionStats.totalDocsExamined : 699
+executionStats.nReturned         : 699
+executionStats.executionTimeMillis: 2
+
+--- full winningPlan (after) ---
+{
+  isCached: false,
+  stage: 'FETCH',
+  inputStage: {
+    stage: 'IXSCAN',
+    keyPattern: {
+      subject: 1,
+      difficulty: 1
+    },
+    indexName: 'idx_subject_difficulty_1',
+    isMultiKey: false,
+    multiKeyPaths: {
+      subject: [],
+      difficulty: []
+    },
+    isUnique: false,
+    isSparse: false,
+    isPartial: false,
+    indexVersion: 2,
+    direction: 'forward',
+    indexBounds: {
+      subject: [
+        '["Mathematics", "Mathematics"]'
+      ],
+      difficulty: [
+        '["hard", "hard"]'
+      ]
+    }
+  }
+}
+
+=== Indexes on questions collection ===
+[
+  {
+    v: 2,
+    key: {
+      _id: 1
+    },
+    name: '_id_'
+  },
+  {
+    v: 2,
+    key: {
+      subject: 1,
+      difficulty: 1
+    },
+    name: 'idx_subject_difficulty_1'
+  }
+]
+
+=== BEFORE / AFTER summary ===
+Stage    BEFORE: COLLSCAN | AFTER: FETCH (inputStage: IXSCAN)
+Docs     BEFORE: 42000 | AFTER: 699
+Time ms  BEFORE: 18 | AFTER: 2
