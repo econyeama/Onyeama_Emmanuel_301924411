@@ -100,7 +100,7 @@ erDiagram
     }
     RESULT {
         bigint   result_id      PK
-        bigint   allocation_id  FK_UK
+        bigint   allocation_id  FK, UK
         bigint   candidate_id   FK
         bigint   exam_id        FK
         numeric  score
