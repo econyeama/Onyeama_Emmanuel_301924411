@@ -1,0 +1,208 @@
+===================================================================
+ Portfolio 1 — Database Design and Modelling (TestPoint CBT)
+===================================================================
+[p1] recreating database 'testpoint'
+DROP DATABASE
+CREATE DATABASE
+ALTER DATABASE
+[p1] applying schema (extensions, tables, constraints, triggers)
+CREATE EXTENSION
+CREATE EXTENSION
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/02_tables.sql:13: NOTICE:  table "result" does not exist, skipping
+DROP TABLE
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/02_tables.sql:14: NOTICE:  table "payment" does not exist, skipping
+DROP TABLE
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/02_tables.sql:15: NOTICE:  table "seat_allocation" does not exist, skipping
+DROP TABLE
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/02_tables.sql:16: NOTICE:  table "registration" does not exist, skipping
+DROP TABLE
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/02_tables.sql:17: NOTICE:  table "seat" does not exist, skipping
+DROP TABLE
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/02_tables.sql:18: NOTICE:  table "exam_session" does not exist, skipping
+DROP TABLE
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/02_tables.sql:19: NOTICE:  table "candidate" does not exist, skipping
+DROP TABLE
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/02_tables.sql:20: NOTICE:  table "exam" does not exist, skipping
+DROP TABLE
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/02_tables.sql:21: NOTICE:  table "centre" does not exist, skipping
+DROP TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/04_triggers.sql:20: NOTICE:  function fn_check_session_capacity() does not exist, skipping
+DROP FUNCTION
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/04_triggers.sql:21: NOTICE:  trigger "trg_check_session_capacity" for relation "seat_allocation" does not exist, skipping
+DROP TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/04_triggers.sql:65: NOTICE:  function fn_sync_session_range() does not exist, skipping
+DROP FUNCTION
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/04_triggers.sql:66: NOTICE:  trigger "trg_sync_session_range" for relation "seat_allocation" does not exist, skipping
+DROP TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+psql:/workspaces/Onyeama_Emmanuel_301924411/portfolio-1-database-design/schema/04_triggers.sql:100: NOTICE:  function fn_check_allocation_consistency() does not exist, skipping
+DROP FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+[p1] seeding small dataset (5 centres, 9 exams, 8 candidates, 5 sessions)
+INSERT 0 5
+INSERT 0 9
+INSERT 0 450
+INSERT 0 8
+INSERT 0 5
+CREATE FUNCTION
+ _seed_book 
+------------
+ 
+(1 row)
+
+ _seed_book 
+------------
+ 
+(1 row)
+
+ _seed_book 
+------------
+ 
+(1 row)
+
+ _seed_book 
+------------
+ 
+(1 row)
+
+ _seed_book 
+------------
+ 
+(1 row)
+
+ _seed_book 
+------------
+ 
+(1 row)
+
+ _seed_book 
+------------
+ 
+(1 row)
+
+ _seed_book 
+------------
+ 
+(1 row)
+
+UPDATE 1
+UPDATE 0
+DROP FUNCTION
+[p1] row counts after seed:
+       tbl       | count 
+-----------------+-------
+ candidate       |     8
+ centre          |     5
+ exam            |     9
+ exam_session    |     5
+ payment         |     7
+ registration    |     8
+ result          |     5
+ seat            |   450
+ seat_allocation |     8
+(9 rows)
+
+[p1] running bulk data generator (50k+ seat allocations over 2 years)
+[bulk] connecting to PostgreSQL db=testpoint user=codespace host=/var/run/postgresql
+[bulk] truncating transactional tables …
+[bulk] generating 12000 candidates …
+[bulk]   inserted 12000 candidates
+[bulk]   inserted 2090 sessions (2024-11-11 → 2027-02-09)
+[bulk] planning allocations (enforcing EXCLUDE client-side) …
+[bulk]   planned 116,820 allocations
+[bulk] inserting registrations …
+[bulk]   inserted 116,820 registrations
+[bulk] inserting seat_allocations …
+[bulk]   inserted 116,820 seat allocations
+[bulk] inserting payments …
+[bulk]   inserted 128,449 payments
+[bulk] inserting results …
+[bulk]   inserted 95,235 results
+
+==============================================================
+ BULK DATA SUMMARY — TestPoint CBT
+==============================================================
+ candidates       :   12,000
+ sessions         :    2,090
+ seat allocations :  116,820   (CA target: ≥ 50,000)
+ payments         :  128,449
+ results          :   95,235
+ session date span: 2024-11-12  →  2027-02-06
+ upcoming sessions:      227   (partly booked, free seats left)
+==============================================================
+[bulk] DONE. Screenshot this terminal output for your evidence.
+[p1] running constraint tests (every bad insert must be rejected)
+
+Test fixtures: session 2091 (PMP, Lagos) and overlapping session 2092 (AZ-900, Abuja); valid booking 116821
+
+=====================================================================
+            CONSTRAINT TESTS (every bad row must be rejected)
+=====================================================================
+                                test                                 | result |                                      database_said                                       
+---------------------------------------------------------------------+--------+------------------------------------------------------------------------------------------
+ T1. UNIQUE candidate per session: c1 gets a 2nd seat in S1          | PASS   | duplicate key value violates unique constraint "uq_allocation_candidate_per_session"
+ T2. UNIQUE seat per session: seat A given to c2 in S1               | PASS   | duplicate key value violates unique constraint "uq_allocation_seat_per_session"
+ T3. EXCLUDE overlap: c1 booked into overlapping S2                  | PASS   | conflicting key value violates exclusion constraint "excl_candidate_no_overlap"
+ T4. trigger: seat from another centre (Abuja seat in Lagos session) | PASS   | Seat 121 is not in the centre of session 2091
+ T5. trigger: seat under maintenance                                 | PASS   | Seat A017 is maintenance, not active
+ T6. trigger: registration of another candidate                      | PASS   | Registration 116821 is not this candidate's registration for this exam
+ T7. CHECK payment > 0: amount = 0                                   | PASS   | new row for relation "payment" violates check constraint "chk_payment_amount_positive"
+ T8. CHECK payment <= 100000: amount = 250000                        | PASS   | new row for relation "payment" violates check constraint "chk_payment_amount_reasonable"
+ T9. UNIQUE payment reference: same reference twice                  | PASS   | duplicate key value violates unique constraint "payment_reference_key"
+ T10. CHECK score 0-100: score = 150                                 | PASS   | new row for relation "result" violates check constraint "chk_result_score_range"
+ T11. session that ends before it starts                             | PASS   | range lower bound must be less than or equal to range upper bound
+ T12. CHECK duration 30-480 min: 600-minute exam                     | PASS   | new row for relation "exam" violates check constraint "exam_duration_minutes_check"
+ T13. CHECK category: unknown exam category                          | PASS   | new row for relation "exam" violates check constraint "exam_category_check"
+ T14. UNIQUE candidate email                                         | PASS   | duplicate key value violates unique constraint "candidate_email_key"
+ T15. trigger: session already full (60 of 60 seats)                 | PASS   | Session 2094 is full: centre capacity is 60, already allocated 60
+(15 rows)
+
+
+Result: 15 of 15 bad inserts were rejected. (All test rows rolled back.)
+[p1] final row counts (screenshot this):
+       tbl       | count  
+-----------------+--------
+ candidate       |  12000
+ centre          |      5
+ exam            |      9
+ exam_session    |   2090
+ payment         | 128449
+ registration    | 116820
+ result          |  95235
+ seat            |    450
+ seat_allocation | 116820
+(9 rows)
+
+
+[p1] DONE.
+[p1] What to screenshot:
+[p1]   1. The row-counts table above (after seed + after bulk).
+[p1]   2. The constraint-tests table (15 PASS rows + 'Result: 15 of 15').
+[p1]   3. The BULK DATA SUMMARY block printed by generate_bulk.py.
+[p1]   4. The ER diagram — drawn on the P1 README page on GitHub.
+
+[p1] Git commit command (run from repo root):
+    git add portfolio-1-database-design/ && \
+    git commit -m 'feat(p1): schema, 3NF notes, ER diagram, 50k+ bulk data, constraint tests' && \
+    git tag p1-design
+===================================================================
